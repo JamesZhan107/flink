@@ -56,17 +56,18 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 
 	@Override
 	public void processElement(StreamRecord<Integer> element) throws Exception {
-		while(isRunning){
-			System.out.println(name + "  run");
-			Thread.sleep(1000);
-			//stop the work after 5 seconds
-			/*
-			if(this.name.equals("work")){
-				isRunning = false;
-				eventGateway.sendEventToCoordinator(new WorkDoneEvent(true));
-			}
-			 */
-		}
+//		while(isRunning){
+//			System.out.println(name + "  run");
+//			Thread.sleep(1000);
+//			//stop the work after 5 seconds
+//			/*
+//			if(this.name.equals("work")){
+//				isRunning = false;
+//				eventGateway.sendEventToCoordinator(new WorkDoneEvent(true));
+//			}
+//			 */
+//		}
+
  		output.collect(element);
 	}
 

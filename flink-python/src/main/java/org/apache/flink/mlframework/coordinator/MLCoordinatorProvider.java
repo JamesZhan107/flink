@@ -5,7 +5,7 @@ import org.apache.flink.runtime.operators.coordination.OperatorCoordinator;
 
 import static org.apache.flink.mlframework.coordinator.MLCoordinator.getCoordinator;
 
-public class MLCoordinatorProvider implements OperatorCoordinator.Provider{
+public class MLCoordinatorProvider implements OperatorCoordinator.Provider {
 	private final OperatorID operatorId;
 
 	public MLCoordinatorProvider(OperatorID operatorId) {
