@@ -20,12 +20,9 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 	private String name;
 	private transient OperatorEventGateway eventGateway;
 	private InetSocketAddress address;
-	private boolean isRunning;
 
-	public MLOperator(String name) throws Exception {
+	public MLOperator(String name) {
 		this.name = name;
-		this.isRunning = true;
-		//address = new InetSocketAddress(IpHostUtil.getIpAddress(), IpHostUtil.getFreePort());
 	}
 
 	@Override
@@ -34,41 +31,25 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 
 		// sending address to coordinator
 		Preconditions.checkNotNull(eventGateway, "Operator event gateway hasn't been set");
-
 		//address = new InetSocketAddress(IpHostUtil.getIpAddress(), IpHostUtil.getFreePort());
 		address = new InetSocketAddress("192.168.1.2", Math.abs(new Random().nextInt() % 1024));
-
 		OperatorEvent addressEvent = new AddressRegistrationEvent(name, address);
 		eventGateway.sendEventToCoordinator(addressEvent);
 		System.out.println(name + " Operator send:  " + address);
 
+		Thread workertask = new Thread(new MLOperatorTask(name, eventGateway));
+		workertask.start();
 	}
 
 	@Override
 	public void close() throws Exception {
-		System.out.println("close");
-		if (this.name.equals("woker")) {
-			// report to coodinator
-			//...
-		}
+		System.out.println(name + "  close");
 		super.close();
 	}
 
 	@Override
 	public void processElement(StreamRecord<Integer> element) throws Exception {
-//		while(isRunning){
-//			System.out.println(name + "  run");
-//			Thread.sleep(1000);
-//			//stop the work after 5 seconds
-//			/*
-//			if(this.name.equals("work")){
-//				isRunning = false;
-//				eventGateway.sendEventToCoordinator(new WorkDoneEvent(true));
-//			}
-//			 */
-//		}
-
- 		output.collect(element);
+		//output.collect(element);
 	}
 
 	public void setOperatorEventGateway(OperatorEventGateway eventGateway) {
@@ -80,9 +61,6 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 		if(evt instanceof ClusterInfoEvent) {
 			String str = ((ClusterInfoEvent) evt).getCluster();
 			System.out.println(name + " Operator "+ address.toString() + "   get :" + str);
-		} else if(evt instanceof StopOperatorEvent) {
-			System.out.println(name + "stop");
-			isRunning = false;
 		}
 	}
 }

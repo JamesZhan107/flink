@@ -23,19 +23,21 @@ public class MultiMLOperatorTest {
 	public void testCoordinate() throws Exception {
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-//		env.fromElements(1, 2, 3)
-//			.transform("WorkOperator", Types.INT, new MLOperatorFactory(new MLOperator("work")))
-//			.setParallelism(3)
-//			.print();
-//
-//		env.fromElements(4,5)
-//			.transform("PsOperator", Types.INT, new MLOperatorFactory(new MLOperator("ps")))
-//			.setParallelism(2)
-//			.print();
+		env.fromSource(new MLSource(Boundedness.CONTINUOUS_UNBOUNDED), WatermarkStrategy.noWatermarks(), "MLSource")
+			.setParallelism(1)
+			.transform("WorkOperator", Types.INT, new MLOperatorFactory(new MLOperator("worker")))
+			.setParallelism(3)
+			.print();
 
 		env.fromSource(new MLSource(Boundedness.CONTINUOUS_UNBOUNDED), WatermarkStrategy.noWatermarks(), "MLSource")
-			//.setParallelism(1)
+			.setParallelism(1)
+			.transform("PsOperator", Types.INT, new MLOperatorFactory(new MLOperator("ps")))
+			.setParallelism(2)
 			.print();
+
+//		env.fromSource(new MLSource(Boundedness.CONTINUOUS_UNBOUNDED), WatermarkStrategy.noWatermarks(), "MLSource")
+//			//.setParallelism(1)
+//			.print();
 		env.execute();
 	}
 }

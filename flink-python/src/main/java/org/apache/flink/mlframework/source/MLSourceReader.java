@@ -15,7 +15,7 @@ public class MLSourceReader implements SourceReader<Integer, MLSourceSplit> {
 	private boolean finished;
 
 	public MLSourceReader() {
-		System.out.println("Construct Reader");
+		//System.out.println("Construct Reader");
 		this.started = false;
 		this.closed = false;
 	}
@@ -49,7 +49,7 @@ public class MLSourceReader implements SourceReader<Integer, MLSourceSplit> {
 	public void handleSourceEvents(SourceEvent sourceEvent) {
 		if(sourceEvent instanceof MLSourceEvent) {
 			this.finished = ((MLSourceEvent) sourceEvent).getDone();
-			System.out.println("Change" + this.finished);
+			System.out.println("Change finish status  " + this.finished);
 		}
 	}
 

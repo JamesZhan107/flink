@@ -2,11 +2,9 @@ package org.apache.flink.mlframework.coordinator;
 
 import org.apache.flink.mlframework.event.AddressRegistrationEvent;
 import org.apache.flink.mlframework.event.ClusterInfoEvent;
-import org.apache.flink.mlframework.event.StopOperatorEvent;
 import org.apache.flink.mlframework.event.WorkDoneEvent;
 import org.apache.flink.runtime.operators.coordination.OperatorCoordinator;
 import org.apache.flink.runtime.operators.coordination.OperatorEvent;
-import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
@@ -14,12 +12,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static org.apache.flink.mlframework.coordinator.MLPublicArgs.getMlPublicArgs;
+
+
 class MLCoordinator implements OperatorCoordinator {
 	private volatile static MLCoordinator mlCoordinator;
 	private String clusters = "";
 	private int nodeNum;
-	private List<Context> contextList;
+	private final List<Context> contextList;
+	private final MLPublicArgs mlPublicArgs;
 
+	// 单例模式，保证多个operator由同一coordinator控制
+	// 需要传入context参数故采用懒汉式，且根据不同情况有不同初始化方法
 	public static MLCoordinator getCoordinator(Context context) {
 		if (mlCoordinator == null) {
 			synchronized (MLCoordinator.class) {
@@ -37,8 +41,8 @@ class MLCoordinator implements OperatorCoordinator {
 
 	private MLCoordinator(List<Context> contextList) {
 		this.contextList = contextList;
+		this.mlPublicArgs = getMlPublicArgs();
 	}
-
 
 	@Override
 	public void start() throws Exception {
@@ -53,16 +57,13 @@ class MLCoordinator implements OperatorCoordinator {
 	@Override
 	public void handleEventFromOperator(int subtask, OperatorEvent event) throws Exception {
 		// stop the ps through sendEvent
-		/*
-		if(event instanceof AddressRegistrationEvent){
+		if(event instanceof AddressRegistrationEvent) {
 			String name = ((AddressRegistrationEvent) event).getName();
 			InetSocketAddress address = ((AddressRegistrationEvent) event).getAddress();
 			System.out.println("coordinator get a " + name + ", the address is :  "+ address.toString());
 			nodeNum++;
-			System.out.println(nodeNum);
 			clusters += address.toString();
 			if (nodeNum== 5) {
-				//Thread.sleep(500);
 				for (int i = 0; i < contextList.size(); ++i) {
 					Context context = contextList.get(i);
 					for (int j = 0; j < context.currentParallelism(); j++) {
@@ -70,38 +71,14 @@ class MLCoordinator implements OperatorCoordinator {
 					}
 				}
 			}
-		}else if(event instanceof WorkDoneEvent){
+		}else if(event instanceof WorkDoneEvent) {
 			nodeNum--;
 			System.out.println("nodenum:  " + nodeNum);
 			if(nodeNum == 2){
-				for (int i = 0; i < contextList.size(); ++i){
-					Context context = contextList.get(i);
-					for (int j = 0; j < context.currentParallelism(); j++) {
-						context.sendEvent(new StopOperatorEvent(false), j);
-					}
-				}
+				System.out.println("setWorkDone");
+				mlPublicArgs.setWorkDone(true);
 			}
 		}
-		*/
-
-		Preconditions.checkArgument(
-			event instanceof AddressRegistrationEvent, "Operator event must be a AddressRegistrationEvent");
-		String name = ((AddressRegistrationEvent) event).getName();
-		InetSocketAddress address = ((AddressRegistrationEvent) event).getAddress();
-		System.out.println("coordinator get a " + name + ", the address is :  "+ address.toString());
-		nodeNum++;
-		System.out.println(nodeNum);
-		clusters += address.toString();
-		if (nodeNum== 5) {
-			Thread.sleep(1000);
-			for (int i = 0; i < contextList.size(); ++i) {
-				Context context = contextList.get(i);
-				for (int j = 0; j < context.currentParallelism(); j++) {
-					context.sendEvent(new ClusterInfoEvent(clusters), j);
-				}
-			}
-		}
-
 	}
 
 	@Override
