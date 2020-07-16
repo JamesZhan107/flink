@@ -12,13 +12,26 @@ import static org.apache.flink.mlframework.coordinator.MLPublicArgs.getMlPublicA
 
 
 public class MLSplitEnumerator implements SplitEnumerator<MLSourceSplit, Set<MLSourceSplit>> {
+	private static final MLSplitEnumerator mlSplitEnumerator = new MLSplitEnumerator();
 	private SplitEnumeratorContext<MLSourceSplit> enumContext;
 	private boolean started;
 	private boolean closed;
 	private MLPublicArgs mlPublicArgs;
 
+	private MLSplitEnumerator() {
+		System.out.println("Construct Enumerator");
+		this.started = false;
+		this.closed = false;
+		this.mlPublicArgs = getMlPublicArgs();
+	}
+
+	public static MLSplitEnumerator getMlSplitEnumerator(SplitEnumeratorContext<MLSourceSplit> enumContext){
+		mlSplitEnumerator.enumContext = enumContext;
+		return mlSplitEnumerator;
+	}
+
 	public MLSplitEnumerator(SplitEnumeratorContext<MLSourceSplit> enumContext) {
-		//System.out.println("Construct Enumerator");
+		System.out.println("Construct Enumerator");
 		this.enumContext = enumContext;
 		this.started = false;
 		this.closed = false;

@@ -5,19 +5,23 @@ import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SourceReader;
 import org.apache.flink.core.io.InputStatus;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class MLSourceReader implements SourceReader<Integer, MLSourceSplit> {
+	private static final MLSourceReader mlSourceReader = new MLSourceReader();
 	private boolean started;
 	private boolean closed;
 	private boolean finished;
 
-	public MLSourceReader() {
-		//System.out.println("Construct Reader");
+	private MLSourceReader() {
+		System.out.println("Construct Reader");
 		this.started = false;
 		this.closed = false;
+	}
+
+	public static MLSourceReader getMlSourceReader(){
+		return mlSourceReader;
 	}
 
 	@Override

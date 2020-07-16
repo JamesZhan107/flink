@@ -3,6 +3,9 @@ package org.apache.flink.mlframework.coordinator;
 import org.apache.flink.mlframework.event.AddressRegistrationEvent;
 import org.apache.flink.mlframework.event.ClusterInfoEvent;
 import org.apache.flink.mlframework.event.WorkDoneEvent;
+import org.apache.flink.mlframework.statemachine.TFMLStateMachineImpl;
+import org.apache.flink.mlframework.statemachine.event.MLEvent;
+import org.apache.flink.mlframework.statemachine.event.MLEventType;
 import org.apache.flink.runtime.operators.coordination.OperatorCoordinator;
 import org.apache.flink.runtime.operators.coordination.OperatorEvent;
 
@@ -19,6 +22,7 @@ class MLCoordinator implements OperatorCoordinator {
 	private volatile static MLCoordinator mlCoordinator;
 	private String clusters = "";
 	private int nodeNum;
+	private TFMLStateMachineImpl tfmlStateMachine;
 	private final List<Context> contextList;
 	private final MLPublicArgs mlPublicArgs;
 
@@ -42,6 +46,8 @@ class MLCoordinator implements OperatorCoordinator {
 	private MLCoordinator(List<Context> contextList) {
 		this.contextList = contextList;
 		this.mlPublicArgs = getMlPublicArgs();
+		this.tfmlStateMachine = new TFMLStateMachineImpl();
+		tfmlStateMachine.sendEvent(new MLEvent(MLEventType.INTI_AM_STATE, "test", 1));
 	}
 
 	@Override
@@ -75,6 +81,7 @@ class MLCoordinator implements OperatorCoordinator {
 			nodeNum--;
 			System.out.println("nodenum:  " + nodeNum);
 			if(nodeNum == 2){
+				tfmlStateMachine.sendEvent(new MLEvent(MLEventType.REGISTER_NODE, "test2", 1));
 				System.out.println("setWorkDone");
 				mlPublicArgs.setWorkDone(true);
 			}

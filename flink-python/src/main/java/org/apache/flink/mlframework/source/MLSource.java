@@ -6,6 +6,9 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
 import java.io.IOException;
 import java.util.Set;
 
+import static org.apache.flink.mlframework.source.MLSourceReader.getMlSourceReader;
+import static org.apache.flink.mlframework.source.MLSplitEnumerator.getMlSplitEnumerator;
+
 public class MLSource implements Source<Integer, MLSourceSplit, Set<MLSourceSplit>> {
 
 	private final Boundedness boundedness;
@@ -21,13 +24,15 @@ public class MLSource implements Source<Integer, MLSourceSplit, Set<MLSourceSpli
 
 	@Override
 	public SourceReader<Integer, MLSourceSplit> createReader(SourceReaderContext readerContext) {
-		return new MLSourceReader();
+		//Singleton
+		return getMlSourceReader();
 	}
 
 	@Override
 	public SplitEnumerator<MLSourceSplit, Set<MLSourceSplit>> createEnumerator(
 		SplitEnumeratorContext<MLSourceSplit> enumContext) {
-		return new MLSplitEnumerator(enumContext);
+		//Singleton
+		return getMlSplitEnumerator(enumContext);
 	}
 
 	@Override

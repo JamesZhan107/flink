@@ -2,8 +2,7 @@ package org.apache.flink.mlframework.operator;
 
 import org.apache.flink.mlframework.event.AddressRegistrationEvent;
 import org.apache.flink.mlframework.event.ClusterInfoEvent;
-import org.apache.flink.mlframework.event.StopOperatorEvent;
-import org.apache.flink.mlframework.event.WorkDoneEvent;
+import org.apache.flink.mlframework.util.IpHostUtil;
 import org.apache.flink.runtime.operators.coordination.OperatorEvent;
 import org.apache.flink.runtime.operators.coordination.OperatorEventGateway;
 import org.apache.flink.runtime.operators.coordination.OperatorEventHandler;
@@ -37,8 +36,8 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 		eventGateway.sendEventToCoordinator(addressEvent);
 		System.out.println(name + " Operator send:  " + address);
 
-		Thread workertask = new Thread(new MLOperatorTask(name, eventGateway));
-		workertask.start();
+		Thread operatortask = new Thread(new MLOperatorTask(name, eventGateway));
+		operatortask.start();
 	}
 
 	@Override
