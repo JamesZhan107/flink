@@ -46,9 +46,9 @@ public class TFMLStateMachineImpl extends AbstractMLStateMachine {
 			.addTransition(AMStatus.AM_RUNNING, AMStatus.AM_RUNNING,
 				MLEventType.FINISH_NODE,
 				new TFTransitions.FinishNode(this))
-			.addTransition(AMStatus.AM_RUNNING, AMStatus.AM_FINISH,
-				MLEventType.FINISH_CLUSTER,
-				new MLTransitions.FinishCluster(this))
+//			.addTransition(AMStatus.AM_RUNNING, AMStatus.AM_FINISH,
+//				MLEventType.FINISH_CLUSTER,
+//				new AMTransitions.FinishCluster(this))
 //			.addTransition(AMStatus.AM_RUNNING, AMStatus.AM_FAILOVER, MLEventType.FAIL_NODE,
 //				new AMTransitions.FailNode(this))
 //			.addTransition(AMStatus.AM_RUNNING, AMStatus.AM_FAILOVER, MLEventType.REGISTER_NODE,

@@ -47,17 +47,4 @@ public class MLTransitions {
 			}
 		}
 	}
-
-	public static class FinishCluster extends Transition
-		implements SingleArcTransition<AbstractMLStateMachine, MLEvent> {
-
-		public FinishCluster(AbstractMLStateMachine stateMachine) {
-			super(stateMachine);
-		}
-
-		@Override
-		public void transition(AbstractMLStateMachine amStateMachine, MLEvent mlEvent) {
-			System.out.println("finish");
-		}
-	}
 }

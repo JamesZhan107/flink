@@ -53,7 +53,6 @@ public class TFTransitions {
 			if(nodeNum == 2){
 				System.out.println("setWorkDone");
 				mlMeta.setWorkDone(true);
-				stateMachine.sendEvent(new MLEvent(MLEventType.FINISH_CLUSTER, "finished", 1));
 			}
 		}
 	}
