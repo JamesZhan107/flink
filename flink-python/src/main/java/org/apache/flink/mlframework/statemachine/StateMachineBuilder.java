@@ -2,6 +2,7 @@ package org.apache.flink.mlframework.statemachine;
 
 import org.apache.flink.mlframework.statemachine.transition.MultipleArcTransition;
 import org.apache.flink.mlframework.statemachine.transition.SingleArcTransition;
+import org.apache.flink.runtime.operators.coordination.TaskNotRunningException;
 
 import java.util.*;
 
@@ -242,7 +243,7 @@ final public class StateMachineBuilder
 	 */
 	private STATE doTransition
 	(OPERAND operand, STATE oldState, EVENTTYPE eventType, EVENT event)
-		throws InvalidStateTransitionException {
+		throws InvalidStateTransitionException, TaskNotRunningException {
 		// We can assume that stateMachineTable is non-null because we call
 		//  maybeMakeStateMachineTable() when we build an InnerStateMachine ,
 		//  and this code only gets called from inside a working InnerStateMachine .
@@ -293,7 +294,7 @@ final public class StateMachineBuilder
 	private interface Transition<OPERAND, STATE extends Enum<STATE>,
 		EVENTTYPE extends Enum<EVENTTYPE>, EVENT> {
 		STATE doTransition(OPERAND operand, STATE oldState,
-						   EVENT event, EVENTTYPE eventType) throws InvalidStateTransitionException;
+						   EVENT event, EVENTTYPE eventType) throws InvalidStateTransitionException, TaskNotRunningException;
 	}
 
 	private class SingleInternalArc
@@ -310,7 +311,7 @@ final public class StateMachineBuilder
 
 		@Override
 		public STATE doTransition(OPERAND operand, STATE oldState,
-								  EVENT event, EVENTTYPE eventType) throws InvalidStateTransitionException {
+								  EVENT event, EVENTTYPE eventType) throws InvalidStateTransitionException, TaskNotRunningException {
 			if (hook != null) {
 				hook.transition(operand, event);
 			}
@@ -397,7 +398,7 @@ final public class StateMachineBuilder
 
 		@Override
 		public synchronized STATE doTransition(EVENTTYPE eventType, EVENT event)
-			throws InvalidStateTransitionException {
+			throws InvalidStateTransitionException, TaskNotRunningException {
 			currentState = StateMachineBuilder.this.doTransition
 				(operand, currentState, eventType, event);
 			return currentState;

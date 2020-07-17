@@ -4,22 +4,28 @@ import org.apache.flink.runtime.operators.coordination.OperatorEvent;
 
 import java.net.InetSocketAddress;
 
-public class AddressRegistrationEvent implements OperatorEvent {
+public class operatorRegisterEvent implements OperatorEvent {
 	private static final long serialVersionUID = 1L;
 
 	private final String name;
-	private final InetSocketAddress address;
+	private final String ip;
+	private final int port;
 
-	public AddressRegistrationEvent(String name, InetSocketAddress address) {
+	public operatorRegisterEvent(String name, String ip, int port) {
 		this.name = name;
-		this.address = address;
-	}
-
-	public InetSocketAddress getAddress() {
-		return address;
+		this.ip = ip;
+		this.port = port;
 	}
 
 	public String getName() {
 		return name;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public int getPort() {
+		return port;
 	}
 }

@@ -3,12 +3,12 @@ package org.apache.flink.mlframework.source;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
-import org.apache.flink.mlframework.coordinator.MLPublicArgs;
+import org.apache.flink.mlframework.statemachine.MLMeta;
 
 import java.io.IOException;
 import java.util.*;
 
-import static org.apache.flink.mlframework.coordinator.MLPublicArgs.getMlPublicArgs;
+import static org.apache.flink.mlframework.statemachine.MLMeta.getMlMeta;
 
 
 public class MLSplitEnumerator implements SplitEnumerator<MLSourceSplit, Set<MLSourceSplit>> {
@@ -16,13 +16,13 @@ public class MLSplitEnumerator implements SplitEnumerator<MLSourceSplit, Set<MLS
 	private SplitEnumeratorContext<MLSourceSplit> enumContext;
 	private boolean started;
 	private boolean closed;
-	private MLPublicArgs mlPublicArgs;
+	private MLMeta mlMeta;
 
 	private MLSplitEnumerator() {
 		System.out.println("Construct Enumerator");
 		this.started = false;
 		this.closed = false;
-		this.mlPublicArgs = getMlPublicArgs();
+		this.mlMeta = getMlMeta();
 	}
 
 	public static MLSplitEnumerator getMlSplitEnumerator(SplitEnumeratorContext<MLSourceSplit> enumContext){
@@ -35,13 +35,13 @@ public class MLSplitEnumerator implements SplitEnumerator<MLSourceSplit, Set<MLS
 		this.enumContext = enumContext;
 		this.started = false;
 		this.closed = false;
-		this.mlPublicArgs = getMlPublicArgs();
+		this.mlMeta = getMlMeta();
 	}
 
 	@Override
 	public void start() {
 		this.started = true;
-		Thread task = new Thread(new MLTask(enumContext, mlPublicArgs));
+		Thread task = new Thread(new MLTask(enumContext, mlMeta));
 		task.start();
 	}
 

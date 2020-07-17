@@ -2,10 +2,10 @@ package org.apache.flink.mlframework.event;
 
 import org.apache.flink.runtime.operators.coordination.OperatorEvent;
 
-public class WorkDoneEvent implements OperatorEvent {
+public class WorkerFinishEvent implements OperatorEvent {
 	private boolean state;
 
-	public WorkDoneEvent(boolean state) {
+	public WorkerFinishEvent(boolean state) {
 		this.state = state;
 	}
 

@@ -1,6 +1,7 @@
 package org.apache.flink.mlframework.statemachine.transition;
 
 import org.apache.flink.mlframework.statemachine.InvalidStateTransitionException;
+import org.apache.flink.runtime.operators.coordination.TaskNotRunningException;
 
 public interface SingleArcTransition<OPERAND, EVENT> {
 	/**
@@ -10,6 +11,6 @@ public interface SingleArcTransition<OPERAND, EVENT> {
 	 * state may change.
 	 * @param event causal event
 	 */
-	void transition(OPERAND operand, EVENT event) throws InvalidStateTransitionException;
+	void transition(OPERAND operand, EVENT event) throws InvalidStateTransitionException, TaskNotRunningException;
 
 }

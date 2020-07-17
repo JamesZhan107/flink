@@ -1,6 +1,6 @@
 package org.apache.flink.mlframework.operator;
 
-import org.apache.flink.mlframework.event.WorkDoneEvent;
+import org.apache.flink.mlframework.event.WorkerFinishEvent;
 import org.apache.flink.runtime.operators.coordination.OperatorEventGateway;
 
 public class MLOperatorTask implements Runnable{
@@ -21,7 +21,7 @@ public class MLOperatorTask implements Runnable{
 				try {
 					System.out.println("worker thread running");
 					Thread.sleep(10000);
-					eventGateway.sendEventToCoordinator(new WorkDoneEvent(true));
+					eventGateway.sendEventToCoordinator(new WorkerFinishEvent(true));
 					isRunning = false;
 				} catch (InterruptedException e) {
 					e.printStackTrace();

@@ -2,7 +2,9 @@ package org.apache.flink.mlframework.statemachine;
 
 import org.apache.flink.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.mlframework.statemachine.event.MLEventType;
+import org.apache.flink.runtime.operators.coordination.OperatorCoordinator;
 
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -14,11 +16,15 @@ public abstract class AbstractMLStateMachine {
 	protected StateMachine<AMStatus, MLEventType, MLEvent> stateMachine;
 	protected final BlockingQueue<MLEvent> eventQueue = new ArrayBlockingQueue<>(1000);
 	protected final ExecutorService exService;
+	protected final MLMeta mlMeta;
+	protected final List<OperatorCoordinator.Context> contextList;
 
-	protected AbstractMLStateMachine() {
+	protected AbstractMLStateMachine(MLMeta mlMeta, List<OperatorCoordinator.Context> contextList) {
 		ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 		this.readLock = readWriteLock.readLock();
 		this.writeLock = readWriteLock.writeLock();
+		this.mlMeta = mlMeta;
+		this.contextList = contextList;
 		this.stateMachine = buildStateMachine();
 		exService = Executors.newFixedThreadPool(1, r -> {
 			Thread eventThread = new Thread(r);
@@ -87,5 +93,13 @@ public abstract class AbstractMLStateMachine {
 
 	protected StateMachine<AMStatus, MLEventType, MLEvent> getStateMachine() {
 		return this.stateMachine;
+	}
+
+	public MLMeta getMlMeta() {
+		return mlMeta;
+	}
+
+	public List<OperatorCoordinator.Context> getContextList() {
+		return contextList;
 	}
 }

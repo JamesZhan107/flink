@@ -4,36 +4,48 @@ import org.apache.flink.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.mlframework.statemachine.event.MLEventType;
 import org.apache.flink.mlframework.statemachine.transition.MLTransitions;
 import org.apache.flink.mlframework.statemachine.transition.TFTransitions;
+import org.apache.flink.runtime.operators.coordination.OperatorCoordinator;
 
-import java.util.EnumSet;
+import java.util.List;
 
 public class TFMLStateMachineImpl extends AbstractMLStateMachine {
+	private static TFMLStateMachineImpl tfmlStateMachine;
 
-	public TFMLStateMachineImpl() {
-		super();
+	private TFMLStateMachineImpl(MLMeta mlMeta, List<OperatorCoordinator.Context> contextList) {
+		super(mlMeta, contextList);
 	}
 
+	public static TFMLStateMachineImpl getTFMLStateMachineImpl(MLMeta mlMeta, List<OperatorCoordinator.Context> contextList){
+		if (tfmlStateMachine == null) {
+			synchronized (TFMLStateMachineImpl.class) {
+				if (tfmlStateMachine == null) {
+					tfmlStateMachine = new TFMLStateMachineImpl(mlMeta, contextList);
+				}
+			}
+		}
+		return tfmlStateMachine;
+	}
 	@Override
 	protected StateMachine<AMStatus, MLEventType, MLEvent> buildStateMachine() {
 		StateMachineBuilder<AbstractMLStateMachine, AMStatus, MLEventType, MLEvent>
 			stateMachineBuilder = new StateMachineBuilder<AbstractMLStateMachine, AMStatus, MLEventType, MLEvent>(
 			AMStatus.AM_UNKNOW)
 			.addTransition(AMStatus.AM_UNKNOW,
-				EnumSet.of(AMStatus.AM_INIT, AMStatus.AM_RUNNING, AMStatus.AM_FAILOVER, AMStatus.AM_FINISH),
+				AMStatus.AM_INIT,
 				MLEventType.INTI_AM_STATE,
 				new MLTransitions.InitAmState(this))
 			.addTransition(AMStatus.AM_INIT, AMStatus.AM_INIT,
 				MLEventType.REGISTER_NODE,
 				new TFTransitions.RegisterNode(this))
-//			.addTransition(AMStatus.AM_INIT, AMStatus.AM_RUNNING, MLEventType.COMPLETE_CLUSTER,
-//				new AMTransitions.CompleteCluster(this))
+			.addTransition(AMStatus.AM_INIT, AMStatus.AM_RUNNING, MLEventType.COMPLETE_CLUSTER,
+				new MLTransitions.CompleteCluster(this))
 //			.addTransition(AMStatus.AM_INIT, AMStatus.AM_FAILOVER, MLEventType.FAIL_NODE,
 //				new AMTransitions.FailNode(this))
 //			.addTransition(AMStatus.AM_INIT, AMStatus.AM_FINISH, MLEventType.STOP_JOB,
 //				new AMTransitions.StopJob(this))
-//			.addTransition(AMStatus.AM_RUNNING, AMStatus.AM_RUNNING,
-//				MLEventType.FINISH_NODE,
-//				new TFTransitions.FinishNode(this))
+			.addTransition(AMStatus.AM_RUNNING, AMStatus.AM_RUNNING,
+				MLEventType.FINISH_NODE,
+				new TFTransitions.FinishNode(this))
 //			.addTransition(AMStatus.AM_RUNNING, AMStatus.AM_FINISH,
 //				MLEventType.FINISH_CLUSTER,
 //				new AMTransitions.FinishCluster(this))

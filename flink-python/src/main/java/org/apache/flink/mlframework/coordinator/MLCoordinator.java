@@ -1,8 +1,8 @@
 package org.apache.flink.mlframework.coordinator;
 
-import org.apache.flink.mlframework.event.AddressRegistrationEvent;
-import org.apache.flink.mlframework.event.ClusterInfoEvent;
-import org.apache.flink.mlframework.event.WorkDoneEvent;
+import org.apache.flink.mlframework.event.operatorRegisterEvent;
+import org.apache.flink.mlframework.event.WorkerFinishEvent;
+import org.apache.flink.mlframework.statemachine.MLMeta;
 import org.apache.flink.mlframework.statemachine.TFMLStateMachineImpl;
 import org.apache.flink.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.mlframework.statemachine.event.MLEventType;
@@ -15,16 +15,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static org.apache.flink.mlframework.coordinator.MLPublicArgs.getMlPublicArgs;
+import static org.apache.flink.mlframework.statemachine.MLMeta.getMlMeta;
+import static org.apache.flink.mlframework.statemachine.TFMLStateMachineImpl.getTFMLStateMachineImpl;
 
 
 class MLCoordinator implements OperatorCoordinator {
 	private volatile static MLCoordinator mlCoordinator;
 	private String clusters = "";
-	private int nodeNum;
-	private TFMLStateMachineImpl tfmlStateMachine;
+	private final TFMLStateMachineImpl tfmlStateMachine;
 	private final List<Context> contextList;
-	private final MLPublicArgs mlPublicArgs;
+	private final MLMeta mlMeta;
 
 	// 单例模式，保证多个operator由同一coordinator控制
 	// 需要传入context参数故采用懒汉式，且根据不同情况有不同初始化方法
@@ -45,9 +45,9 @@ class MLCoordinator implements OperatorCoordinator {
 
 	private MLCoordinator(List<Context> contextList) {
 		this.contextList = contextList;
-		this.mlPublicArgs = getMlPublicArgs();
-		this.tfmlStateMachine = new TFMLStateMachineImpl();
-		tfmlStateMachine.sendEvent(new MLEvent(MLEventType.INTI_AM_STATE, "test", 1));
+		this.mlMeta = getMlMeta();
+		this.tfmlStateMachine = getTFMLStateMachineImpl(mlMeta, contextList);
+		tfmlStateMachine.sendEvent(new MLEvent(MLEventType.INTI_AM_STATE, "init work", 1));
 	}
 
 	@Override
@@ -62,29 +62,13 @@ class MLCoordinator implements OperatorCoordinator {
 
 	@Override
 	public void handleEventFromOperator(int subtask, OperatorEvent event) throws Exception {
-		// stop the ps through sendEvent
-		if(event instanceof AddressRegistrationEvent) {
-			String name = ((AddressRegistrationEvent) event).getName();
-			InetSocketAddress address = ((AddressRegistrationEvent) event).getAddress();
+		if(event instanceof operatorRegisterEvent) {
+			String name = ((operatorRegisterEvent) event).getName();
+			InetSocketAddress address = new InetSocketAddress(((operatorRegisterEvent) event).getIp(), ((operatorRegisterEvent) event).getPort());
+			tfmlStateMachine.sendEvent(new MLEvent(MLEventType.REGISTER_NODE, address, 1));
 			System.out.println("coordinator get a " + name + ", the address is :  "+ address.toString());
-			nodeNum++;
-			clusters += address.toString();
-			if (nodeNum== 5) {
-				for (int i = 0; i < contextList.size(); ++i) {
-					Context context = contextList.get(i);
-					for (int j = 0; j < context.currentParallelism(); j++) {
-						context.sendEvent(new ClusterInfoEvent(clusters), j);
-					}
-				}
-			}
-		}else if(event instanceof WorkDoneEvent) {
-			nodeNum--;
-			System.out.println("nodenum:  " + nodeNum);
-			if(nodeNum == 2){
-				tfmlStateMachine.sendEvent(new MLEvent(MLEventType.REGISTER_NODE, "test2", 1));
-				System.out.println("setWorkDone");
-				mlPublicArgs.setWorkDone(true);
-			}
+		}else if(event instanceof WorkerFinishEvent) {
+			tfmlStateMachine.sendEvent(new MLEvent(MLEventType.FINISH_NODE, "finish node", 1));
 		}
 	}
 
