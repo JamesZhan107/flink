@@ -7,8 +7,6 @@ import org.apache.flink.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.runtime.operators.coordination.OperatorCoordinator;
 import org.apache.flink.runtime.operators.coordination.TaskNotRunningException;
 
-import java.io.IOException;
-
 public class MLTransitions {
 
 	public static class InitAmState extends Transition
@@ -36,15 +34,13 @@ public class MLTransitions {
 			throws InvalidStateTransitionException, TaskNotRunningException {
 			System.out.println("running");
 			String clusterInfo = mlMeta.getClusterInfo();
-			int nodeNum = mlMeta.getNodeNum();
-			if(nodeNum == 5){
-				for (int i = 0; i < contextList.size(); ++i) {
-					OperatorCoordinator.Context context = contextList.get(i);
-					for (int j = 0; j < context.currentParallelism(); j++) {
-						context.sendEvent(new ClusterInfoEvent(clusterInfo), j);
-					}
+			for (int i = 0; i < contextList.size(); ++i) {
+				OperatorCoordinator.Context context = contextList.get(i);
+				for (int j = 0; j < context.currentParallelism(); j++) {
+					context.sendEvent(new ClusterInfoEvent(clusterInfo), j);
 				}
 			}
+			mlMeta.setWorkStart(true);
 		}
 	}
 

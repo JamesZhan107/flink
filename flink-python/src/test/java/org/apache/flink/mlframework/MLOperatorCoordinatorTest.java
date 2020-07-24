@@ -1,4 +1,4 @@
-package org.apache.flink.newCoordinator;
+package org.apache.flink.mlframework;
 
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.mlframework.operator.MLOperator;
@@ -6,7 +6,7 @@ import org.apache.flink.mlframework.operator.MLOperatorFactory;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.junit.Test;
 
-public class OneMLOperatorTest {
+public class MLOperatorCoordinatorTest {
 	@Test
 	public void testCoordinate() throws Exception {
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

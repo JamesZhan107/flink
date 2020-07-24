@@ -1,4 +1,4 @@
-package org.apache.flink.newCoordinator;
+package org.apache.flink.mlframework;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.Types;
@@ -9,7 +9,7 @@ import org.apache.flink.mlframework.source.MLSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.junit.Test;
 
-public class MultiMLOperatorTest {
+public class MLFrameworkITCase {
 	@Test
 	public void testCoordinate() throws Exception {
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -26,9 +26,6 @@ public class MultiMLOperatorTest {
 			.setParallelism(2)
 			.print();
 
-//		env.fromSource(new MLSource(Boundedness.CONTINUOUS_UNBOUNDED), WatermarkStrategy.noWatermarks(), "MLSource")
-//			//.setParallelism(1)
-//			.print();
 		env.execute();
 	}
 }

@@ -19,11 +19,13 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 	private transient OperatorEventGateway eventGateway;
 	private final String ip;
 	private final int port;
+	public static boolean isRunning;
 
 	public MLOperator(String name) throws Exception {
 		this.name = name;
 		this.ip = "192.168.1.2";
 		this.port = Math.abs(new Random().nextInt() % 1024);
+		isRunning = false;
 //		this.ip = IpHostUtil.getIpAddress();
 //		this.port = IpHostUtil.getFreePort();
 	}
@@ -31,13 +33,12 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 	@Override
 	public void open() throws Exception {
 		super.open();
-
 		// sending address to coordinator
 		Preconditions.checkNotNull(eventGateway, "Operator event gateway hasn't been set");
-		OperatorEvent addressEvent = new operatorRegisterEvent(name, ip, port);
-		eventGateway.sendEventToCoordinator(addressEvent);
+		OperatorEvent operatorRegisterEvent = new operatorRegisterEvent(name, ip, port);
+		eventGateway.sendEventToCoordinator(operatorRegisterEvent);
 		System.out.println(name + " Operator send:  " + ip + ": " + port);
-
+		// 启动python进程
 		Thread operatortask = new Thread(new MLOperatorTask(name, eventGateway));
 		operatortask.start();
 	}
@@ -62,6 +63,7 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 		if(evt instanceof ClusterInfoEvent) {
 			String str = ((ClusterInfoEvent) evt).getCluster();
 			System.out.println(name + " Operator "+ ip + ": " + port + "   get :" + str);
+			isRunning = true;
 		}
 	}
 }

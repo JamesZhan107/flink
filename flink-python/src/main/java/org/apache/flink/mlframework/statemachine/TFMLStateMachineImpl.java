@@ -1,5 +1,6 @@
 package org.apache.flink.mlframework.statemachine;
 
+import org.apache.flink.mlframework.statemachine.event.AMStatus;
 import org.apache.flink.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.mlframework.statemachine.event.MLEventType;
 import org.apache.flink.mlframework.statemachine.transition.MLTransitions;

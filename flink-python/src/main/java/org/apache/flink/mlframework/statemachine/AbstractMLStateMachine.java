@@ -1,5 +1,6 @@
 package org.apache.flink.mlframework.statemachine;
 
+import org.apache.flink.mlframework.statemachine.event.AMStatus;
 import org.apache.flink.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.mlframework.statemachine.event.MLEventType;
 import org.apache.flink.runtime.operators.coordination.OperatorCoordinator;
@@ -75,7 +76,7 @@ public abstract class AbstractMLStateMachine {
 				}
 				throw e;
 			}
-			System.out.println("AM doTransition:" + oldState.toString() + " => " + getInternalState().toString());
+			System.out.println("doTransition:" + oldState.toString() + " => " + getInternalState().toString());
 
 		} finally {
 			writeLock.unlock();

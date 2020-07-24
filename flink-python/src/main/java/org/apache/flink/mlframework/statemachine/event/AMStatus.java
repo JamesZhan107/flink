@@ -1,4 +1,4 @@
-package org.apache.flink.mlframework.statemachine;
+package org.apache.flink.mlframework.statemachine.event;
 
 public enum AMStatus {
 	AM_UNKNOW,

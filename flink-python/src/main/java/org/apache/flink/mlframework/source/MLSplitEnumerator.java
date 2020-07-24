@@ -22,26 +22,18 @@ public class MLSplitEnumerator implements SplitEnumerator<MLSourceSplit, Set<MLS
 		System.out.println("Construct Enumerator");
 		this.started = false;
 		this.closed = false;
-		this.mlMeta = getMlMeta();
 	}
 
 	public static MLSplitEnumerator getMlSplitEnumerator(SplitEnumeratorContext<MLSourceSplit> enumContext){
 		mlSplitEnumerator.enumContext = enumContext;
+		mlSplitEnumerator.mlMeta = getMlMeta();
 		return mlSplitEnumerator;
-	}
-
-	public MLSplitEnumerator(SplitEnumeratorContext<MLSourceSplit> enumContext) {
-		System.out.println("Construct Enumerator");
-		this.enumContext = enumContext;
-		this.started = false;
-		this.closed = false;
-		this.mlMeta = getMlMeta();
 	}
 
 	@Override
 	public void start() {
 		this.started = true;
-		Thread task = new Thread(new MLTask(enumContext, mlMeta));
+		Thread task = new Thread(new MLSourceTask(enumContext, mlMeta));
 		task.start();
 	}
 

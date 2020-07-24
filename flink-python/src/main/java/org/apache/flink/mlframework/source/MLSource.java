@@ -38,7 +38,7 @@ public class MLSource implements Source<Integer, MLSourceSplit, Set<MLSourceSpli
 	@Override
 	public SplitEnumerator<MLSourceSplit, Set<MLSourceSplit>> restoreEnumerator(
 		SplitEnumeratorContext<MLSourceSplit> enumContext,
-		Set<MLSourceSplit> checkpoint) throws IOException {
+		Set<MLSourceSplit> checkpoint) {
 		return null;
 	}
 

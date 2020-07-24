@@ -1,10 +1,11 @@
 package org.apache.flink.mlframework.statemachine;
 
 public class MLMeta {
-	//单例模式，保证coordinator和enumerator共享同一Args
+	//单例模式，保证coordinator和enumerator共享同一Meta
 
 	private static final MLMeta ML_META = new MLMeta();
-	private static boolean workDone;
+	private static boolean workStart;
+	private static boolean workStop;
 	private static int nodeNum;
 	private static int workerNum;
 	private static int psNum;
@@ -18,12 +19,20 @@ public class MLMeta {
 		return ML_META;
 	}
 
-	public static boolean isWorkDone() {
-		return workDone;
+	public static boolean isWorkStart() {
+		return workStart;
 	}
 
-	public static void setWorkDone(boolean workDone) {
-		MLMeta.workDone = workDone;
+	public static void setWorkStart(boolean workStart) {
+		MLMeta.workStart = workStart;
+	}
+
+	public static boolean isworkStop() {
+		return workStop;
+	}
+
+	public static void setworkStop(boolean workStop) {
+		MLMeta.workStop = workStop;
 	}
 
 	public static int getNodeNum() {

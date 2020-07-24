@@ -21,10 +21,8 @@ import static org.apache.flink.mlframework.statemachine.TFMLStateMachineImpl.get
 
 class MLCoordinator implements OperatorCoordinator {
 	private volatile static MLCoordinator mlCoordinator;
-	private String clusters = "";
 	private final TFMLStateMachineImpl tfmlStateMachine;
 	private final List<Context> contextList;
-	private final MLMeta mlMeta;
 
 	// 单例模式，保证多个operator由同一coordinator控制
 	// 需要传入context参数故采用懒汉式，且根据不同情况有不同初始化方法
@@ -45,7 +43,7 @@ class MLCoordinator implements OperatorCoordinator {
 
 	private MLCoordinator(List<Context> contextList) {
 		this.contextList = contextList;
-		this.mlMeta = getMlMeta();
+		MLMeta mlMeta = getMlMeta();
 		this.tfmlStateMachine = getTFMLStateMachineImpl(mlMeta, contextList);
 		tfmlStateMachine.sendEvent(new MLEvent(MLEventType.INTI_AM_STATE, "init work", 1));
 	}
@@ -67,7 +65,7 @@ class MLCoordinator implements OperatorCoordinator {
 			InetSocketAddress address = new InetSocketAddress(((operatorRegisterEvent) event).getIp(), ((operatorRegisterEvent) event).getPort());
 			tfmlStateMachine.sendEvent(new MLEvent(MLEventType.REGISTER_NODE, address, 1));
 			System.out.println("coordinator get a " + name + ", the address is :  "+ address.toString());
-		}else if(event instanceof WorkerFinishEvent) {
+		} else if(event instanceof WorkerFinishEvent) {
 			tfmlStateMachine.sendEvent(new MLEvent(MLEventType.FINISH_NODE, "finish node", 1));
 		}
 	}

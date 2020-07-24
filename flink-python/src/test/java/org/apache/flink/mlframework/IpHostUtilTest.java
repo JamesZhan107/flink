@@ -1,10 +1,7 @@
-package org.apache.flink.newCoordinator;
+package org.apache.flink.mlframework;
 
-import org.apache.flink.api.common.time.Time;
 import org.apache.flink.mlframework.util.IpHostUtil;
 import org.junit.Test;
-
-import java.io.IOException;
 
 public class IpHostUtilTest {
 	@Test
