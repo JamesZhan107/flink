@@ -254,7 +254,7 @@ class UserDefinedTableFunctionWrapper(UserDefinedFunctionWrapper):
     Wrapper for Python user-defined table function.
     """
 
-    def __init__(self, func, input_types, result_types, deterministic=None, name=None):
+    def __init__(self, func, input_types, result_types, udtf_type, deterministic=None, name=None):
         super(UserDefinedTableFunctionWrapper, self).__init__(
             func, input_types, deterministic, name)
 
@@ -268,6 +268,7 @@ class UserDefinedTableFunctionWrapper(UserDefinedFunctionWrapper):
                         result_type))
 
         self._result_types = result_types
+        self._udtf_type = udtf_type
         self._judtf_placeholder = None
 
     def java_user_defined_function(self):
@@ -276,6 +277,17 @@ class UserDefinedTableFunctionWrapper(UserDefinedFunctionWrapper):
         return self._judtf_placeholder
 
     def _create_judtf(self):
+
+        def get_python_function_kind(udtf_type):
+            JPythonFunctionKind = gateway.jvm.org.apache.flink.table.functions.python. \
+                PythonFunctionKind
+            if udtf_type == "general":
+                return JPythonFunctionKind.GENERAL
+            elif udtf_type == "ml":
+                return JPythonFunctionKind.ML
+            else:
+                raise TypeError("Unsupported udf_type: %s." % udtf_type)
+
         func = self._func
         if not isinstance(self._func, UserDefinedFunction):
             func = DelegationTableFunction(self._func)
@@ -293,8 +305,7 @@ class UserDefinedTableFunctionWrapper(UserDefinedFunctionWrapper):
         j_result_types = utils.to_jarray(gateway.jvm.TypeInformation,
                                          [_to_java_type(i) for i in self._result_types])
         j_result_type = gateway.jvm.org.apache.flink.api.java.typeutils.RowTypeInfo(j_result_types)
-        j_function_kind = gateway.jvm.org.apache.flink.table.functions.python. \
-            PythonFunctionKind.GENERAL
+        j_function_kind = get_python_function_kind(self._udtf_type)
         PythonTableFunction = gateway.jvm \
             .org.apache.flink.table.functions.python.PythonTableFunction
         j_table_function = PythonTableFunction(
@@ -320,8 +331,9 @@ def _create_udf(f, input_types, result_type, udf_type, deterministic, name):
         f, input_types, result_type, udf_type, deterministic, name)
 
 
-def _create_udtf(f, input_types, result_types, deterministic, name):
-    return UserDefinedTableFunctionWrapper(f, input_types, result_types, deterministic, name)
+def _create_udtf(f, input_types, result_types, udtf_type, deterministic, name):
+    return UserDefinedTableFunctionWrapper(
+        f, input_types, result_types, udtf_type, deterministic, name)
 
 
 def udf(f=None, input_types=None, result_type=None, deterministic=None, name=None,
@@ -375,7 +387,8 @@ def udf(f=None, input_types=None, result_type=None, deterministic=None, name=Non
         return _create_udf(f, input_types, result_type, udf_type, deterministic, name)
 
 
-def udtf(f=None, input_types=None, result_types=None, deterministic=None, name=None):
+def udtf(f=None, input_types=None, result_types=None, deterministic=None, name=None,
+         udtf_type="general"):
     """
     Helper method for creating a user-defined table function.
 
@@ -400,6 +413,8 @@ def udtf(f=None, input_types=None, result_types=None, deterministic=None, name=N
     :param result_types: the result data types.
     :type result_types: list[DataType] or DataType
     :param name: the function name.
+    :param udtf_type: the type of the python function, available value: general, ml,
+                     (default: general)
     :type name: str
     :param deterministic: the determinism of the function's results. True if and only if a call to
                           this function is guaranteed to always return the same result given the
@@ -410,9 +425,11 @@ def udtf(f=None, input_types=None, result_types=None, deterministic=None, name=N
 
     .. versionadded:: 1.11.0
     """
+    if udtf_type not in ('general', 'ml'):
+        raise ValueError("The udtf_type must be one of 'general, ml', got %s." % udtf_type)
     # decorator
     if f is None:
         return functools.partial(_create_udtf, input_types=input_types, result_types=result_types,
-                                 deterministic=deterministic, name=name)
+                                 udtf_type=udtf_type, deterministic=deterministic, name=name)
     else:
-        return _create_udtf(f, input_types, result_types, deterministic, name)
+        return _create_udtf(f, input_types, result_types, udtf_type, deterministic, name)

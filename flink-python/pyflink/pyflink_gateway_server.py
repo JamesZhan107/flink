@@ -63,6 +63,7 @@ def find_java_executable():
 
 def construct_log_settings():
     templates = [
+        # "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
         "-Dlog.file=${flink_log_dir}/flink-${flink_ident_string}-python-${hostname}.log",
         "-Dlog4j.configuration=${flink_conf_dir}/log4j-cli.properties",
         "-Dlog4j.configurationFile=${flink_conf_dir}/log4j-cli.properties",

@@ -28,5 +28,7 @@ public enum PythonFunctionKind {
 
 	GENERAL,
 
-	PANDAS
+	PANDAS,
+
+	ML
 }

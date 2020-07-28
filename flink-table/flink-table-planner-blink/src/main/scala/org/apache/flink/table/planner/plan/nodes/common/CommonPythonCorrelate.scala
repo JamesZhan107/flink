@@ -23,12 +23,14 @@ import org.apache.calcite.rel.core.JoinRelType
 import org.apache.calcite.rex.{RexCall, RexInputRef, RexNode}
 import org.apache.flink.api.dag.Transformation
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.operators.OneInputStreamOperator
+import org.apache.flink.streaming.api.operators.{OneInputStreamOperator, StreamOperatorFactory}
 import org.apache.flink.streaming.api.transformations.OneInputTransformation
 import org.apache.flink.table.data.RowData
-import org.apache.flink.table.functions.python.PythonFunctionInfo
+import org.apache.flink.table.functions.python.{PythonFunctionInfo, PythonFunctionKind}
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.plan.nodes.common.CommonPythonCorrelate.PYTHON_TABLE_FUNCTION_OPERATOR_NAME
+import org.apache.flink.table.planner.plan.nodes.common.CommonPythonCorrelate.PYTHON_TABLE_FUNCTION_ML_OPERATOR_NAME
+import org.apache.flink.table.planner.plan.nodes.common.CommonPythonCorrelate.ML_OPERATOR_FACTORY_NAME
 import org.apache.flink.table.planner.plan.nodes.logical.FlinkLogicalTableFunctionScan
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo
 import org.apache.flink.table.types.logical.RowType
@@ -43,7 +45,12 @@ trait CommonPythonCorrelate extends CommonPythonBase {
       pythonFunctionInfo: PythonFunctionInfo,
       udtfInputOffsets: Array[Int],
       joinType: JoinRelType): OneInputStreamOperator[RowData, RowData] = {
-    val clazz = loadClass(PYTHON_TABLE_FUNCTION_OPERATOR_NAME)
+    val clazz = if (pythonFunctionInfo.getPythonFunction.getPythonFunctionKind
+        .equals(PythonFunctionKind.GENERAL)) {
+      loadClass(PYTHON_TABLE_FUNCTION_OPERATOR_NAME)
+    } else {
+      loadClass(PYTHON_TABLE_FUNCTION_ML_OPERATOR_NAME)
+    }
     val ctor = clazz.getConstructor(
       classOf[Configuration],
       classOf[PythonFunctionInfo],
@@ -59,6 +66,17 @@ trait CommonPythonCorrelate extends CommonPythonBase {
       udtfInputOffsets,
       joinType)
       .asInstanceOf[OneInputStreamOperator[RowData, RowData]]
+  }
+
+  private def getMLOperatorFactory(
+      mlOperator: OneInputStreamOperator[RowData, RowData]): StreamOperatorFactory[RowData] = {
+    val clazz = loadClass(ML_OPERATOR_FACTORY_NAME)
+    val constructors = clazz.getConstructors
+    val ctor = constructors(0)
+    ctor.newInstance(
+      mlOperator
+      )
+      .asInstanceOf[StreamOperatorFactory[RowData]]
   }
 
   private def extractPythonTableFunctionInfo(
@@ -92,17 +110,34 @@ trait CommonPythonCorrelate extends CommonPythonBase {
       pythonFunctionInfo,
       pythonUdtfInputOffsets,
       joinType)
+    if (pythonFunctionInfo.getPythonFunction.getPythonFunctionKind
+        .equals(PythonFunctionKind.GENERAL)) {
+      new OneInputTransformation(
+        inputTransform,
+        name,
+        pythonOperator,
+        pythonOperatorOutputRowType,
+        inputTransform.getParallelism)
+    } else {
+      val operatorFactory = getMLOperatorFactory(pythonOperator)
+      new OneInputTransformation(
+        inputTransform,
+        name,
+        operatorFactory,
+        pythonOperatorOutputRowType,
+        inputTransform.getParallelism)
+    }
 
-    new OneInputTransformation(
-      inputTransform,
-      name,
-      pythonOperator,
-      pythonOperatorOutputRowType,
-      inputTransform.getParallelism)
   }
 }
 
 object CommonPythonCorrelate {
   val PYTHON_TABLE_FUNCTION_OPERATOR_NAME =
     "org.apache.flink.table.runtime.operators.python.table.RowDataPythonTableFunctionOperator"
+
+  val PYTHON_TABLE_FUNCTION_ML_OPERATOR_NAME =
+    "org.apache.flink.table.runtime.operators.python.table.RowDataPythonTableFunctionMLOperator"
+
+  val ML_OPERATOR_FACTORY_NAME =
+    "org.apache.flink.table.runtime.ml.python.mlframework.operator.MLOperatorFactory"
 }
