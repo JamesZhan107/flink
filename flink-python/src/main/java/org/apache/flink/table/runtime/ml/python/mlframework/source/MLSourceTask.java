@@ -18,16 +18,30 @@ public class MLSourceTask implements Runnable{
 	@Override
 	public void run() {
 		while (isRunning) {
+//			try {
+//				Thread.sleep(5);
+//				// TODO : queue
+//				if(mlMeta.isworkStop()) {
+//					System.out.println("work finished");
+//					//stop the reader
+//					for(int i = 0; i < enumContext.registeredReaders().size(); i++) {
+//						enumContext.sendEventToSourceReader(i, new MLSourceEvent(true));
+//					}
+//					isRunning = false;
+//				}
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+
 			try {
-				Thread.sleep(5);
-				if(mlMeta.isworkStop()) {
-					System.out.println("work finished");
-					//stop the reader
-					for(int i = 0; i < enumContext.registeredReaders().size(); i++) {
-						enumContext.sendEventToSourceReader(i, new MLSourceEvent(true));
-					}
-					isRunning = false;
+				Thread.sleep(10000);
+				System.out.println("work finished");
+				//stop the reader
+				for(int i = 0; i < enumContext.registeredReaders().size(); i++) {
+					enumContext.sendEventToSourceReader(i, new MLSourceEvent(true));
 				}
+				isRunning = false;
+
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

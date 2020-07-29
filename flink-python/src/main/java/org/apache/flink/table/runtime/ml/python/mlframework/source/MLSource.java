@@ -8,7 +8,7 @@ import java.util.Set;
 import static org.apache.flink.table.runtime.ml.python.mlframework.source.MLSourceReader.getMlSourceReader;
 import static org.apache.flink.table.runtime.ml.python.mlframework.source.MLSplitEnumerator.getMlSplitEnumerator;
 
-public class MLSource implements Source<Integer, MLSourceSplit, Set<MLSourceSplit>> {
+public class MLSource<T> implements Source<T, MLSourceSplit, Set<MLSourceSplit>> {
 
 	private final Boundedness boundedness;
 
@@ -22,7 +22,7 @@ public class MLSource implements Source<Integer, MLSourceSplit, Set<MLSourceSpli
 	}
 
 	@Override
-	public SourceReader<Integer, MLSourceSplit> createReader(SourceReaderContext readerContext) {
+	public SourceReader<T, MLSourceSplit> createReader(SourceReaderContext readerContext) {
 		//Singleton
 		return getMlSourceReader();
 	}

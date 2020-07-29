@@ -8,13 +8,14 @@ import org.apache.flink.core.io.InputStatus;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class MLSourceReader implements SourceReader<Integer, MLSourceSplit> {
+public class MLSourceReader<T> implements SourceReader<T, MLSourceSplit> {
 	private static final MLSourceReader mlSourceReader = new MLSourceReader();
 	private boolean started;
 	private boolean closed;
 	private boolean finished;
 
 	private MLSourceReader() {
+		System.out.println("construct reader");
 		this.started = false;
 		this.closed = false;
 	}
@@ -25,11 +26,12 @@ public class MLSourceReader implements SourceReader<Integer, MLSourceSplit> {
 
 	@Override
 	public void start() {
+		System.out.println("start");
 		this.started = true;
 	}
 
 	@Override
-	public InputStatus pollNext(ReaderOutput<Integer> sourceOutput) throws Exception {
+	public InputStatus pollNext(ReaderOutput<T> sourceOutput) throws Exception {
 		return finished ? InputStatus.END_OF_INPUT : InputStatus.MORE_AVAILABLE;
 	}
 

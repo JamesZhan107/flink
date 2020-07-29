@@ -139,5 +139,6 @@ object CommonPythonCorrelate {
     "org.apache.flink.table.runtime.operators.python.table.RowDataPythonTableFunctionMLOperator"
 
   val ML_OPERATOR_FACTORY_NAME =
-    "org.apache.flink.table.runtime.ml.python.mlframework.operator.MLOperatorFactory"
+    "org.apache.flink.table.runtime.ml.python.mlframework.operator" +
+      ".RowDataPythonTableFunctionMLOperatorFactory"
 }
