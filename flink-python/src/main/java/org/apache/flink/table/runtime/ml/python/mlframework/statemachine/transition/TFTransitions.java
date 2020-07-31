@@ -4,6 +4,7 @@ import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.Abstrac
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.InvalidStateTransitionException;
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.MLEventType;
+import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.WorkStopEvent;
 
 import java.net.InetSocketAddress;
 
@@ -49,7 +50,11 @@ public class TFTransitions {
 			System.out.println("nodenum:  " + nodeNum);
 			mlMeta.setNodeNum(nodeNum);
 			if(nodeNum == 2){
-				mlMeta.setworkStop(true);
+				try {
+					mlMeta.workStopEventQueue.put(new WorkStopEvent(true));
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 				stateMachine.sendEvent(new MLEvent(MLEventType.FINISH_CLUSTER, "finished", 1));
 			}
 		}

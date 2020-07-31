@@ -11,6 +11,6 @@ public interface SingleArcTransition<OPERAND, EVENT> {
 	 * state may change.
 	 * @param event causal event
 	 */
-	void transition(OPERAND operand, EVENT event) throws InvalidStateTransitionException, TaskNotRunningException;
+	void transition(OPERAND operand, EVENT event) throws InvalidStateTransitionException, TaskNotRunningException, InterruptedException;
 
 }

@@ -6,6 +6,7 @@ import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.Invalid
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.runtime.operators.coordination.OperatorCoordinator;
 import org.apache.flink.runtime.operators.coordination.TaskNotRunningException;
+import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.WorkStopEvent;
 
 public class MLTransitions {
 
@@ -32,7 +33,6 @@ public class MLTransitions {
 		@Override
 		public void transition(AbstractMLStateMachine AbstractMLStateMachine, MLEvent mlEvent)
 			throws InvalidStateTransitionException, TaskNotRunningException {
-			System.out.println("running");
 			String clusterInfo = mlMeta.getClusterInfo();
 			for (int i = 0; i < contextList.size(); ++i) {
 				OperatorCoordinator.Context context = contextList.get(i);
@@ -41,6 +41,12 @@ public class MLTransitions {
 				}
 			}
 			mlMeta.setWorkStart(true);
+			try {
+				Thread.sleep(15000);
+				mlMeta.workStopEventQueue.put(new WorkStopEvent(true));
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

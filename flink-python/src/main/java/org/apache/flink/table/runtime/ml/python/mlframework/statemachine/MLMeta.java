@@ -1,15 +1,20 @@
 package org.apache.flink.table.runtime.ml.python.mlframework.statemachine;
 
+import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.WorkStopEvent;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
 public class MLMeta {
 	//单例模式，保证coordinator和enumerator共享同一Meta
 
 	private static final MLMeta ML_META = new MLMeta();
 	private static boolean workStart;
-	private static boolean workStop;
 	private static int nodeNum;
 	private static int workerNum;
 	private static int psNum;
 	private static String clusterInfo;
+	public BlockingQueue<WorkStopEvent> workStopEventQueue = new ArrayBlockingQueue<>(1000);
 
 	private MLMeta() {
 
@@ -25,14 +30,6 @@ public class MLMeta {
 
 	public static void setWorkStart(boolean workStart) {
 		MLMeta.workStart = workStart;
-	}
-
-	public static boolean isworkStop() {
-		return workStop;
-	}
-
-	public static void setworkStop(boolean workStop) {
-		MLMeta.workStop = workStop;
 	}
 
 	public static int getNodeNum() {

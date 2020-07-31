@@ -313,7 +313,11 @@ final public class StateMachineBuilder
 		public STATE doTransition(OPERAND operand, STATE oldState,
 								  EVENT event, EVENTTYPE eventType) throws InvalidStateTransitionException, TaskNotRunningException {
 			if (hook != null) {
-				hook.transition(operand, event);
+				try {
+					hook.transition(operand, event);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 			return postState;
 		}

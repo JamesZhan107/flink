@@ -54,4 +54,6 @@ public interface PythonEnvironmentManager extends AutoCloseable {
 	 * Returns the boot log of the Python Environment.
 	 */
 	String getBootLog() throws Exception;
+
+	String getBaseDirectory();
 }

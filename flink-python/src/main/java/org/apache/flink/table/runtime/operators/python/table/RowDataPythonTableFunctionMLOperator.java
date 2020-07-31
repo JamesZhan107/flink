@@ -25,6 +25,7 @@ import org.apache.flink.table.runtime.typeutils.PythonTypeUtils;
 import org.apache.flink.table.runtime.typeutils.RowDataSerializer;
 import org.apache.flink.table.types.logical.RowType;
 
+import java.io.*;
 import java.util.Random;
 
 /**
@@ -98,7 +99,7 @@ public class RowDataPythonTableFunctionMLOperator
 		port = Math.abs(new Random().nextInt() % 1024);
 		OperatorEvent operatorRegisterEvent = new operatorRegisterEvent("mlOperator", ip, port);
 		eventGateway.sendEventToCoordinator(operatorRegisterEvent);
-		System.out.println(ip + ":" + port);
+		//System.out.println(ip + ":" + port);
 	}
 
 	@Override
@@ -168,8 +169,22 @@ public class RowDataPythonTableFunctionMLOperator
 	@Override
 	public void handleOperatorEvent(OperatorEvent evt) {
 		if(evt instanceof ClusterInfoEvent) {
-			String str = ((ClusterInfoEvent) evt).getCluster();
-			System.out.println(name + " Operator "+ ip + ": " + port + "   get :" + str);
+			String clusterInfo = ((ClusterInfoEvent) evt).getCluster();
+			System.out.println(name + " Operator "+ ip + ": " + port + "   get :" + clusterInfo);
+			String path = pythonEnvironmentManager.getBaseDirectory();
+			String clusterInfoFile = path + "/clusterInfo.txt";
+			//System.out.println(clusterInfoFile);
+			try {
+				File file = new File(clusterInfoFile);
+				file.createNewFile();
+
+				OutputStreamWriter write = new OutputStreamWriter(new FileOutputStream(file),"gbk");
+				BufferedWriter writer=new BufferedWriter(write);
+				writer.write(clusterInfo);
+				writer.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }

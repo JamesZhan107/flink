@@ -97,6 +97,8 @@ public abstract class AbstractPythonFunctionOperator<IN, OUT>
 	 */
 	private final PythonConfig config;
 
+	protected transient PythonEnvironmentManager pythonEnvironmentManager;
+
 	public AbstractPythonFunctionOperator(Configuration config) {
 		this.config = new PythonConfig(Preconditions.checkNotNull(config));
 		this.chainingStrategy = ChainingStrategy.ALWAYS;
@@ -327,10 +329,11 @@ public abstract class AbstractPythonFunctionOperator<IN, OUT>
 			config, getRuntimeContext().getDistributedCache());
 		PythonEnv pythonEnv = getPythonEnv();
 		if (pythonEnv.getExecType() == PythonEnv.ExecType.PROCESS) {
-			return new ProcessPythonEnvironmentManager(
+			pythonEnvironmentManager =  new ProcessPythonEnvironmentManager(
 				dependencyInfo,
 				getContainingTask().getEnvironment().getTaskManagerInfo().getTmpDirectories(),
 				System.getenv());
+			return pythonEnvironmentManager;
 		} else {
 			throw new UnsupportedOperationException(String.format(
 				"Execution type '%s' is not supported.", pythonEnv.getExecType()));

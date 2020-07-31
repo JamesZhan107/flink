@@ -323,7 +323,7 @@ public final class ProcessPythonEnvironmentManager implements PythonEnvironmentM
 	}
 
 	@VisibleForTesting
-	String getBaseDirectory() {
+	public String getBaseDirectory() {
 		return baseDirectory;
 	}
 

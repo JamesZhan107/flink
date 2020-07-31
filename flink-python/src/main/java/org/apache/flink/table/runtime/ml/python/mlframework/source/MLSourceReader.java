@@ -4,11 +4,13 @@ import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SourceReader;
 import org.apache.flink.core.io.InputStatus;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class MLSourceReader<T> implements SourceReader<T, MLSourceSplit> {
+public class MLSourceReader<RowData> implements SourceReader<RowData, MLSourceSplit> {
 	private static final MLSourceReader mlSourceReader = new MLSourceReader();
 	private boolean started;
 	private boolean closed;
@@ -31,7 +33,11 @@ public class MLSourceReader<T> implements SourceReader<T, MLSourceSplit> {
 	}
 
 	@Override
-	public InputStatus pollNext(ReaderOutput<T> sourceOutput) throws Exception {
+	public InputStatus pollNext(ReaderOutput<RowData> sourceOutput) throws Exception {
+		GenericRowData rowData = new GenericRowData(2);
+		rowData.setField(0,1);
+		rowData.setField(1,2);
+		sourceOutput.collect((RowData) rowData);
 		return finished ? InputStatus.END_OF_INPUT : InputStatus.MORE_AVAILABLE;
 	}
 
