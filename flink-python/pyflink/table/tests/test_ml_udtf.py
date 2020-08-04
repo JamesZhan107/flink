@@ -72,14 +72,15 @@ class MultiNum(ScalarFunction):
 
 class UserDefinedTableFunctionMLEasyTest(object):
     def test_table_function(self):
-        self.t_env.register_function("easy_func", easy_func)
+        self.t_env.register_function("easy_func_worker", easy_func)
+        self.t_env.register_function("easy_func_ps", easy_func)
 
         t1 = self.t_env.from_elements([(1, 1), (2, 1), (3, 2)], ['a', 'b'])
         t2 = self.t_env.from_elements([(1, 1), (2, 1), (3, 2)], ['a', 'b'])
 
-        t1 = t1.join_lateral("easy_func(a, b) as x") \
+        t1 = t1.join_lateral("easy_func_worker(a, b) as x") \
             .select("x")
-        t2 = t2.join_lateral("easy_func(a, b) as x") \
+        t2 = t2.join_lateral("easy_func_ps(a, b) as x") \
             .select("x")
 
         table_sink = source_sink_utils.TestAppendSink(
@@ -92,8 +93,8 @@ class UserDefinedTableFunctionMLEasyTest(object):
         t2.insert_into("Results")
 
         self.t_env.execute("test")
-        # actual = source_sink_utils.results()
 
+        # actual = source_sink_utils.results()
         # self.assert_equals(actual, ["1", "2", "1", "2", "1", "2"])
 
 
@@ -110,7 +111,7 @@ class PyFlinkBlinkStreamUserDefinedFunctionMLTests(UserDefinedTableFunctionMLEas
 
 class MLFrameworkTest(object):
     def test_table_function(self):
-        self.t_env.register_function("easy_func", test_func)
+        self.t_env.register_function("test_func", test_func)
 
         my_source_ddl = """
             create table mySource (
@@ -139,19 +140,79 @@ class MLFrameworkTest(object):
 # test function
 @udtf(input_types=[DataTypes.BIGINT(), DataTypes.BIGINT()], result_types=DataTypes.BIGINT(), udtf_type="ml")
 def test_func(x, y):
-    # logging.info("run")
 
     if os.path.exists(os.environ['BOOT_LOG_DIR'] + '/clusterInfo.txt'):
-        # logging.info("run")
         f = open(os.environ['BOOT_LOG_DIR'] + '/clusterInfo.txt')
         line = f.readline()
         if line is not None:
-            logging.info(line)
+            # logging.info(line)
+            x = x + 2
+        else:
+            logging.info("no cluster_info get")
+    else:
+        logging.info("no file create")
 
     return range(1, 3)
 
 
 class MLFrameworkTests(MLFrameworkTest, PyFlinkBlinkStreamTableTestCase):
+    pass
+
+
+class MLFrameworkMutiSourceTest(object):
+    def test_table_function(self):
+        self.t_env.register_function("worker", easy_func)
+        self.t_env.register_function("ps", easy_func)
+
+        my_source_ddl1 = """
+                    create table mySource1 (
+                        num1 INT,
+                        num2 INT
+                    ) with (
+                        'connector' = 'ml'
+                    )
+                """
+        my_source_ddl2 = """
+                            create table mySource2 (
+                                num3 INT,
+                                num4 INT
+                            ) with (
+                                'connector' = 'ml'
+                            )
+                        """
+
+        self.t_env.execute_sql(my_source_ddl1)
+
+        self.t_env.execute_sql(my_source_ddl2)
+
+        t1 = self.t_env.from_path("mySource1")
+        t2 = self.t_env.from_path("mySource2")
+
+        t1 = t1.join_lateral("worker(num1, num2) as x") \
+            .select("x")
+        t2 = t2.join_lateral("ps(num3, num4) as x") \
+            .select("x")
+
+        table_sink = source_sink_utils.TestAppendSink(
+            ['a'],
+            [DataTypes.BIGINT()])
+
+        self.t_env.register_table_sink("Results", table_sink)
+
+        t1.insert_into("Results")
+        t2.insert_into("Results")
+
+        self.t_env.execute("test")
+
+
+# easy function
+@udtf(input_types=[DataTypes.BIGINT(), DataTypes.BIGINT()], result_types=DataTypes.BIGINT(), udtf_type="ml")
+def easy_func(x, y):
+    return range(1, 3)
+
+
+class MLFrameworkMutiSourceTests(MLFrameworkMutiSourceTest,
+                                                   PyFlinkBlinkStreamTableTestCase):
     pass
 
 

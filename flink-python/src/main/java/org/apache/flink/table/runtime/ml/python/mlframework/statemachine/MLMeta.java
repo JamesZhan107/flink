@@ -13,7 +13,7 @@ public class MLMeta {
 	private static int nodeNum;
 	private static int workerNum;
 	private static int psNum;
-	private static String clusterInfo;
+	private static String clusterInfo = "";
 	public BlockingQueue<WorkStopEvent> workStopEventQueue = new ArrayBlockingQueue<>(1000);
 
 	private MLMeta() {

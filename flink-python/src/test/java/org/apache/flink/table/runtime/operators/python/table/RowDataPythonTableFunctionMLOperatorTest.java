@@ -68,7 +68,7 @@ public class RowDataPythonTableFunctionMLOperatorTest
 			RowType outputType,
 			int[] udfInputOffsets,
 			JoinRelType joinRelType) {
-			super(config, tableFunction, inputType, outputType, udfInputOffsets, joinRelType);
+			super(config, tableFunction, inputType, outputType, udfInputOffsets, joinRelType, "operator");
 		}
 
 		@Override

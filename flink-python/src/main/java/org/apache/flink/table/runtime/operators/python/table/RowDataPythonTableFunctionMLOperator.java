@@ -68,7 +68,7 @@ public class RowDataPythonTableFunctionMLOperator
 	 */
 	private transient RowDataSerializer forwardedInputSerializer;
 
-	private transient String name;
+	private final String name;
 	private transient OperatorEventGateway eventGateway;
 	private transient String ip;
 	private transient int port;
@@ -79,8 +79,10 @@ public class RowDataPythonTableFunctionMLOperator
 		RowType inputType,
 		RowType outputType,
 		int[] udtfInputOffsets,
-		JoinRelType joinType) {
+		JoinRelType joinType,
+	    String name) {
 		super(config, tableFunction, inputType, outputType, udtfInputOffsets, joinType);
+		this.name = name;
 	}
 
 	@Override
@@ -97,7 +99,7 @@ public class RowDataPythonTableFunctionMLOperator
 
 		ip = "192.168.1.2";
 		port = Math.abs(new Random().nextInt() % 1024);
-		OperatorEvent operatorRegisterEvent = new operatorRegisterEvent("mlOperator", ip, port);
+		OperatorEvent operatorRegisterEvent = new operatorRegisterEvent(name, ip, port);
 		eventGateway.sendEventToCoordinator(operatorRegisterEvent);
 		//System.out.println(ip + ":" + port);
 	}
@@ -170,7 +172,7 @@ public class RowDataPythonTableFunctionMLOperator
 	public void handleOperatorEvent(OperatorEvent evt) {
 		if(evt instanceof ClusterInfoEvent) {
 			String clusterInfo = ((ClusterInfoEvent) evt).getCluster();
-			System.out.println(name + " Operator "+ ip + ": " + port + "   get :" + clusterInfo);
+			System.out.println(name + "  "+ ip + ": " + port + "   get :" + clusterInfo);
 			String path = pythonEnvironmentManager.getBaseDirectory();
 			String clusterInfoFile = path + "/clusterInfo.txt";
 			//System.out.println(clusterInfoFile);

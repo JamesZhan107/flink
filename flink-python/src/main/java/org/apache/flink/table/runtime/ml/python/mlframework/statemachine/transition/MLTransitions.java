@@ -42,7 +42,7 @@ public class MLTransitions {
 			}
 			mlMeta.setWorkStart(true);
 			try {
-				Thread.sleep(15000);
+				Thread.sleep(30000);
 				mlMeta.workStopEventQueue.put(new WorkStopEvent(true));
 			} catch (InterruptedException e) {
 				e.printStackTrace();

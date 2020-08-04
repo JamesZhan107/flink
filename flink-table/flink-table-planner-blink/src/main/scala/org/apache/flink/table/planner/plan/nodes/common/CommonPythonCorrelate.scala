@@ -18,6 +18,8 @@
 
 package org.apache.flink.table.planner.plan.nodes.common
 
+import java.io.IOException
+
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.core.JoinRelType
 import org.apache.calcite.rex.{RexCall, RexInputRef, RexNode}
@@ -36,6 +38,7 @@ import org.apache.flink.table.runtime.typeutils.InternalTypeInfo
 import org.apache.flink.table.types.logical.RowType
 
 import scala.collection.mutable
+import scala.util.parsing.json.JSON
 
 trait CommonPythonCorrelate extends CommonPythonBase {
   private def getPythonTableFunctionOperator(
@@ -45,12 +48,7 @@ trait CommonPythonCorrelate extends CommonPythonBase {
       pythonFunctionInfo: PythonFunctionInfo,
       udtfInputOffsets: Array[Int],
       joinType: JoinRelType): OneInputStreamOperator[RowData, RowData] = {
-    val clazz = if (pythonFunctionInfo.getPythonFunction.getPythonFunctionKind
-        .equals(PythonFunctionKind.GENERAL)) {
-      loadClass(PYTHON_TABLE_FUNCTION_OPERATOR_NAME)
-    } else {
-      loadClass(PYTHON_TABLE_FUNCTION_ML_OPERATOR_NAME)
-    }
+    val clazz = loadClass(PYTHON_TABLE_FUNCTION_OPERATOR_NAME)
     val ctor = clazz.getConstructor(
       classOf[Configuration],
       classOf[PythonFunctionInfo],
@@ -65,6 +63,34 @@ trait CommonPythonCorrelate extends CommonPythonBase {
       outputRowType.toRowType,
       udtfInputOffsets,
       joinType)
+      .asInstanceOf[OneInputStreamOperator[RowData, RowData]]
+  }
+
+  private def getPythonTableFunctionMLOperator(
+      config: Configuration,
+      inputRowType: InternalTypeInfo[RowData],
+      outputRowType: InternalTypeInfo[RowData],
+      pythonFunctionInfo: PythonFunctionInfo,
+      udtfInputOffsets: Array[Int],
+      joinType: JoinRelType,
+      name: String): OneInputStreamOperator[RowData, RowData] = {
+    val clazz = loadClass(PYTHON_TABLE_FUNCTION_ML_OPERATOR_NAME)
+    val ctor = clazz.getConstructor(
+      classOf[Configuration],
+      classOf[PythonFunctionInfo],
+      classOf[RowType],
+      classOf[RowType],
+      classOf[Array[Int]],
+      classOf[JoinRelType],
+      classOf[String])
+    ctor.newInstance(
+      config,
+      pythonFunctionInfo,
+      inputRowType.toRowType,
+      outputRowType.toRowType,
+      udtfInputOffsets,
+      joinType,
+      name)
       .asInstanceOf[OneInputStreamOperator[RowData, RowData]]
   }
 
@@ -103,15 +129,15 @@ trait CommonPythonCorrelate extends CommonPythonBase {
       .asInstanceOf[InternalTypeInfo[RowData]]
     val pythonOperatorOutputRowType = InternalTypeInfo.of(
       FlinkTypeFactory.toLogicalType(outputRowType).asInstanceOf[RowType])
-    val pythonOperator = getPythonTableFunctionOperator(
-      config,
-      pythonOperatorInputRowType,
-      pythonOperatorOutputRowType,
-      pythonFunctionInfo,
-      pythonUdtfInputOffsets,
-      joinType)
     if (pythonFunctionInfo.getPythonFunction.getPythonFunctionKind
         .equals(PythonFunctionKind.GENERAL)) {
+      val pythonOperator = getPythonTableFunctionOperator(
+        config,
+        pythonOperatorInputRowType,
+        pythonOperatorOutputRowType,
+        pythonFunctionInfo,
+        pythonUdtfInputOffsets,
+        joinType)
       new OneInputTransformation(
         inputTransform,
         name,
@@ -119,15 +145,38 @@ trait CommonPythonCorrelate extends CommonPythonBase {
         pythonOperatorOutputRowType,
         inputTransform.getParallelism)
     } else {
-      val operatorFactory = getMLOperatorFactory(pythonOperator)
-      new OneInputTransformation(
-        inputTransform,
-        name,
-        operatorFactory,
-        pythonOperatorOutputRowType,
-        inputTransform.getParallelism)
+      val func_name = pythonTableFuncRexCall.op.getName
+      val roleConfig = config.getString("config.role", "null")
+      val roleJson = JSON.parseFull(roleConfig)
+      val keys = regJson(roleJson)
+      try {
+        val parallelism = keys(func_name).toString.toInt
+        val pythonOperator = getPythonTableFunctionMLOperator(
+          config,
+          pythonOperatorInputRowType,
+          pythonOperatorOutputRowType,
+          pythonFunctionInfo,
+          pythonUdtfInputOffsets,
+          joinType,
+          func_name)
+        val operatorFactory = getMLOperatorFactory(pythonOperator)
+        new OneInputTransformation(
+          inputTransform,
+          func_name,
+          operatorFactory,
+          pythonOperatorOutputRowType,
+          parallelism)
+      } catch {
+        case ex: IOException => {
+          println(ex)
+          return null
+        }
+      }
     }
+  }
 
+  def regJson(json:Option[Any]) = json match {
+    case Some(map: Map[String, Any]) => map
   }
 }
 

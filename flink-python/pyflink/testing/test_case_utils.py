@@ -162,12 +162,14 @@ class PyFlinkBlinkStreamTableTestCase(PyFlinkTestCase):
     def setUp(self):
         super(PyFlinkBlinkStreamTableTestCase, self).setUp()
         self.env = StreamExecutionEnvironment.get_execution_environment()
-        self.env.set_parallelism(5)
+        self.env.set_parallelism(1)
         self.t_env = StreamTableEnvironment.create(
             self.env, environment_settings=EnvironmentSettings.new_instance()
                 .in_streaming_mode().use_blink_planner().build())
         self.t_env.get_config().get_configuration().set_string(
             "taskmanager.memory.task.off-heap.size", "80mb")
+        self.t_env.get_config().get_configuration().set_string(
+            "config.role", '{"worker":"3", "ps":"2"}')
 
 
 class PyFlinkBlinkBatchTableTestCase(PyFlinkTestCase):
