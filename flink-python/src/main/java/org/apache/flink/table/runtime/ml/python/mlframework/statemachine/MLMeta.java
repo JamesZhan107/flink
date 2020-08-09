@@ -2,6 +2,9 @@ package org.apache.flink.table.runtime.ml.python.mlframework.statemachine;
 
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.WorkStopEvent;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -9,11 +12,32 @@ public class MLMeta {
 	//单例模式，保证coordinator和enumerator共享同一Meta
 
 	private static final MLMeta ML_META = new MLMeta();
+
+	/**
+	 * work start flag
+	 */
 	private static boolean workStart;
-	private static int nodeNum;
-	private static int workerNum;
-	private static int psNum;
-	private static String clusterInfo = "";
+
+	/**
+	 * operator register num
+	 */
+	private int registerNodeNum;
+
+	private int lastNodeNum;
+
+	/**
+	 * users config node num
+	 */
+	public HashMap<String, Integer> nodeNumMap = new HashMap<>();
+
+	/**
+	 * cluster info by register
+	 */
+	private HashMap<String, ArrayList<String>> clusterInfo = new HashMap<>();
+
+	/**
+	 * block queue when worker stop
+	 */
 	public BlockingQueue<WorkStopEvent> workStopEventQueue = new ArrayBlockingQueue<>(1000);
 
 	private MLMeta() {
@@ -32,35 +56,35 @@ public class MLMeta {
 		MLMeta.workStart = workStart;
 	}
 
-	public static int getNodeNum() {
-		return nodeNum;
+	public int getConfigNodeNum() {
+		int nodenum = 0;
+		for(Map.Entry<String, Integer> entry : nodeNumMap.entrySet()) {
+			nodenum += entry.getValue();
+		}
+		return nodenum;
 	}
 
-	public static void setNodeNum(int nodeNum) {
-		MLMeta.nodeNum = nodeNum;
+	public int getRegisterNodeNum() {
+		return registerNodeNum;
 	}
 
-	public static int getworkerNum() {
-		return workerNum;
+	public void setRegisterNodeNum(int registerNodeNum) {
+		this.registerNodeNum = registerNodeNum;
 	}
 
-	public static void setworkerNum(int workerNum) {
-		MLMeta.workerNum = workerNum;
-	}
-
-	public static int getPsNum() {
-		return psNum;
-	}
-
-	public static void setPsNum(int psNum) {
-		MLMeta.psNum = psNum;
-	}
-
-	public static String getClusterInfo() {
+	public HashMap<String, ArrayList<String>> getClusterInfo() {
 		return clusterInfo;
 	}
 
-	public static void setClusterInfo(String clusterInfo) {
-		MLMeta.clusterInfo = clusterInfo;
+	public void setClusterInfo(HashMap<String, ArrayList<String>> clusterInfo) {
+		this.clusterInfo = clusterInfo;
+	}
+
+	public int getLastNodeNum() {
+		return lastNodeNum;
+	}
+
+	public void setLastNodeNum(int lastNodeNum) {
+		this.lastNodeNum = lastNodeNum;
 	}
 }

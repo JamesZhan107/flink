@@ -5,8 +5,10 @@ import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.Invalid
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.MLEventType;
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.WorkStopEvent;
+import org.apache.flink.table.runtime.ml.python.mlframework.util.JsonUtil;
 
-import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class TFTransitions {
 
@@ -18,18 +20,21 @@ public class TFTransitions {
 		}
 
 		@Override
-		public synchronized void transition(AbstractMLStateMachine amStateMachine, MLEvent mlEvent)
-			throws InvalidStateTransitionException {
-			System.out.println("register node");
-			InetSocketAddress address = (InetSocketAddress) mlEvent.getMessage();
-			String clusterInfo = mlMeta.getClusterInfo();
-			clusterInfo += address.toString();
+		public synchronized void transition(AbstractMLStateMachine amStateMachine, MLEvent mlEvent) {
+			String address = mlEvent.getMessage().toString();
+			String name = mlEvent.getName();
+			HashMap<String, ArrayList<String>> clusterInfo = mlMeta.getClusterInfo();
+			ArrayList<String> list;
+			list = clusterInfo.containsKey(name) ? clusterInfo.get(name) : new ArrayList<>();
+			list.add(address);
+			clusterInfo.put(name, list);
 			mlMeta.setClusterInfo(clusterInfo);
-			int nodeNum = mlMeta.getNodeNum();
-			nodeNum++;
-			mlMeta.setNodeNum(nodeNum);
-			if (nodeNum == 5) {
-				stateMachine.sendEvent(new MLEvent(MLEventType.COMPLETE_CLUSTER, clusterInfo, 1));
+			int registerNodeNum = mlMeta.getRegisterNodeNum();
+			registerNodeNum++;
+			mlMeta.setRegisterNodeNum(registerNodeNum);
+			if (registerNodeNum == mlMeta.getConfigNodeNum()) {
+				mlMeta.setLastNodeNum(mlMeta.getRegisterNodeNum());
+				stateMachine.sendEvent(new MLEvent(MLEventType.COMPLETE_CLUSTER, JsonUtil.toJSONString(clusterInfo), ""));
 			}
 		}
 	}
@@ -42,20 +47,17 @@ public class TFTransitions {
 		}
 
 		@Override
-		public synchronized void transition(AbstractMLStateMachine amStateMachine, MLEvent mlEvent)
-			throws InvalidStateTransitionException {
-			System.out.println("finish node");
-			int nodeNum = mlMeta.getNodeNum();
-			nodeNum--;
-			System.out.println("nodenum:  " + nodeNum);
-			mlMeta.setNodeNum(nodeNum);
-			if(nodeNum == 2){
+		public synchronized void transition(AbstractMLStateMachine amStateMachine, MLEvent mlEvent) {
+			int lastNodeNum = mlMeta.getLastNodeNum();
+			lastNodeNum--;
+			mlMeta.setLastNodeNum(lastNodeNum);
+			if(lastNodeNum == mlMeta.nodeNumMap.getOrDefault("ps", 0)){
 				try {
 					mlMeta.workStopEventQueue.put(new WorkStopEvent(true));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				stateMachine.sendEvent(new MLEvent(MLEventType.FINISH_CLUSTER, "finished", 1));
+				stateMachine.sendEvent(new MLEvent(MLEventType.FINISH_CLUSTER, "finished", ""));
 			}
 		}
 	}

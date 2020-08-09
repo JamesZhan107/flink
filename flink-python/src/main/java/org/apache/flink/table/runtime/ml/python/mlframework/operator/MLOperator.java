@@ -1,6 +1,6 @@
 package org.apache.flink.table.runtime.ml.python.mlframework.operator;
 
-import org.apache.flink.table.runtime.ml.python.mlframework.event.operatorRegisterEvent;
+import org.apache.flink.table.runtime.ml.python.mlframework.event.OperatorRegisterEvent;
 import org.apache.flink.table.runtime.ml.python.mlframework.event.ClusterInfoEvent;
 import org.apache.flink.runtime.operators.coordination.OperatorEvent;
 import org.apache.flink.runtime.operators.coordination.OperatorEventGateway;
@@ -35,7 +35,7 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 		super.open();
 		// sending address to coordinator
 		Preconditions.checkNotNull(eventGateway, "Operator event gateway hasn't been set");
-		OperatorEvent operatorRegisterEvent = new operatorRegisterEvent(name, ip, port);
+		OperatorEvent operatorRegisterEvent = new OperatorRegisterEvent(name, ip+port);
 		eventGateway.sendEventToCoordinator(operatorRegisterEvent);
 		System.out.println(name + " Operator send:  " + ip + ": " + port);
 		// 启动python进程
@@ -51,7 +51,7 @@ public class MLOperator extends AbstractStreamOperator<Integer>
 
 	@Override
 	public void processElement(StreamRecord<Integer> element) throws Exception {
-		//output.collect(element);
+		output.collect(element);
 	}
 
 	public void setOperatorEventGateway(OperatorEventGateway eventGateway) {

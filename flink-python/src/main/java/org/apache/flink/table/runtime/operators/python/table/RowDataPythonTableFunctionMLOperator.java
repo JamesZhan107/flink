@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.runtime.ml.python.mlframework.event.ClusterInfoEvent;
-import org.apache.flink.table.runtime.ml.python.mlframework.event.operatorRegisterEvent;
+import org.apache.flink.table.runtime.ml.python.mlframework.event.OperatorRegisterEvent;
 import org.apache.flink.runtime.operators.coordination.OperatorEvent;
 import org.apache.flink.runtime.operators.coordination.OperatorEventGateway;
 import org.apache.flink.runtime.operators.coordination.OperatorEventHandler;
@@ -21,12 +21,13 @@ import org.apache.flink.table.planner.codegen.CodeGeneratorContext;
 import org.apache.flink.table.planner.codegen.ProjectionCodeGenerator;
 import org.apache.flink.table.runtime.generated.GeneratedProjection;
 import org.apache.flink.table.runtime.generated.Projection;
+import org.apache.flink.table.runtime.ml.python.mlframework.event.NodeFinishEvent;
+import org.apache.flink.table.runtime.ml.python.mlframework.util.IpHostUtil;
 import org.apache.flink.table.runtime.typeutils.PythonTypeUtils;
 import org.apache.flink.table.runtime.typeutils.RowDataSerializer;
 import org.apache.flink.table.types.logical.RowType;
 
 import java.io.*;
-import java.util.Random;
 
 /**
  * The Python {@link TableFunction} ML operator for the blink planner.
@@ -68,10 +69,10 @@ public class RowDataPythonTableFunctionMLOperator
 	 */
 	private transient RowDataSerializer forwardedInputSerializer;
 
-	private final String name;
 	private transient OperatorEventGateway eventGateway;
-	private transient String ip;
-	private transient int port;
+	private String address;
+	private final String name;
+	private int index;
 
 	public RowDataPythonTableFunctionMLOperator(
 		Configuration config,
@@ -88,7 +89,11 @@ public class RowDataPythonTableFunctionMLOperator
 	@Override
 	@SuppressWarnings("unchecked")
 	public void open() throws Exception {
+		address = IpHostUtil.getAddress();
+		OperatorEvent operatorRegisterEvent = new OperatorRegisterEvent(name, address);
+		eventGateway.sendEventToCoordinator(operatorRegisterEvent);
 		super.open();
+		index = getRuntimeContext().getIndexOfThisSubtask();
 		rowDataWrapper = new StreamRecordRowDataWrappingCollector(output);
 		reuseJoinedRow = new JoinedRowData();
 
@@ -96,12 +101,13 @@ public class RowDataPythonTableFunctionMLOperator
 		forwardedInputSerializer = new RowDataSerializer(inputType);
 		udtfInputTypeSerializer = PythonTypeUtils.toBlinkTypeSerializer(userDefinedFunctionInputType);
 		udtfOutputTypeSerializer = PythonTypeUtils.toBlinkTypeSerializer(userDefinedFunctionOutputType);
+	}
 
-		ip = "192.168.1.2";
-		port = Math.abs(new Random().nextInt() % 1024);
-		OperatorEvent operatorRegisterEvent = new operatorRegisterEvent(name, ip, port);
-		eventGateway.sendEventToCoordinator(operatorRegisterEvent);
-		//System.out.println(ip + ":" + port);
+	@Override
+	public void close() throws Exception {
+		LOG.info("{} operator close?????", name+"--"+address+"--"+index );
+		eventGateway.sendEventToCoordinator(new NodeFinishEvent(true, name));
+		super.close();
 	}
 
 	@Override
@@ -172,17 +178,19 @@ public class RowDataPythonTableFunctionMLOperator
 	public void handleOperatorEvent(OperatorEvent evt) {
 		if(evt instanceof ClusterInfoEvent) {
 			String clusterInfo = ((ClusterInfoEvent) evt).getCluster();
-			System.out.println(name + "  "+ ip + ": " + port + "   get :" + clusterInfo);
+			LOG.info("operator receive the cluster info : {}", name + "  "+ index + " " + address + "   get :" + clusterInfo);
 			String path = pythonEnvironmentManager.getBaseDirectory();
 			String clusterInfoFile = path + "/clusterInfo.txt";
-			//System.out.println(clusterInfoFile);
 			try {
+				//create file
 				File file = new File(clusterInfoFile);
 				file.createNewFile();
-
+				//write data
 				OutputStreamWriter write = new OutputStreamWriter(new FileOutputStream(file),"gbk");
 				BufferedWriter writer=new BufferedWriter(write);
-				writer.write(clusterInfo);
+				writer.write(clusterInfo + "&");
+				writer.write(name);
+				writer.write("&" + index);
 				writer.close();
 			} catch (IOException e) {
 				e.printStackTrace();

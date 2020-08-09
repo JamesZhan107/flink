@@ -112,4 +112,17 @@ public class IpHostUtil {
 			return socket.getLocalPort();
 		}
 	}
+
+	public static String getAddress() {
+		ServerSocket serverSocket = null;
+		String localIp = null;
+		try {
+			serverSocket = new ServerSocket(0);
+			localIp = serverSocket.getInetAddress().getLocalHost().getHostAddress();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		int port = serverSocket.getLocalPort();
+		return localIp +":"+ port;
+	}
 }

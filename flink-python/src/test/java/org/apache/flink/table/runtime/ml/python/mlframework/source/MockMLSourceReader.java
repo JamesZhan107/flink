@@ -11,21 +11,23 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class MLSourceReader<RowData> implements SourceReader<RowData, MLSourceSplit> {
-	private static final MLSourceReader mlSourceReader = new MLSourceReader();
+public class MockMLSourceReader implements SourceReader<Integer, MockMLSourceSplit> {
+	private static final MockMLSourceReader MOCK_ML_SOURCE_READER = new MockMLSourceReader();
 	private boolean started;
 	private boolean closed;
 	private boolean finished;
 
-	protected static final Logger LOG = LoggerFactory.getLogger(MLSourceReader.class);
+	protected static final Logger LOG = LoggerFactory.getLogger(MockMLSourceReader.class);
 
-	private MLSourceReader() {
+	private MockMLSourceReader() {
+		//LOG.info("construct reader");
+		System.out.println("construct reader");
 		this.started = false;
 		this.closed = false;
 	}
 
-	public static MLSourceReader getMlSourceReader(){
-		return mlSourceReader;
+	public static MockMLSourceReader getMlSourceReader(){
+		return MOCK_ML_SOURCE_READER;
 	}
 
 	@Override
@@ -34,22 +36,21 @@ public class MLSourceReader<RowData> implements SourceReader<RowData, MLSourceSp
 	}
 
 	@Override
-	public InputStatus pollNext(ReaderOutput<RowData> sourceOutput) throws Exception {
-		GenericRowData rowData = new GenericRowData(1);
-		rowData.setField(0,1);
-		sourceOutput.collect((RowData) rowData);
+	public InputStatus pollNext(ReaderOutput<Integer> sourceOutput) throws Exception {
+		sourceOutput.collect(1);
 		return finished ? InputStatus.END_OF_INPUT : InputStatus.NOTHING_AVAILABLE;
 	}
 
 	@Override
-	public List<MLSourceSplit> snapshotState() {
+	public List<MockMLSourceSplit> snapshotState() {
 		return null;
 	}
 
 	@Override
 	public CompletableFuture<Void> isAvailable() {
+		System.out.println("ask?");
 		try {
-			Thread.sleep(500);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -57,14 +58,14 @@ public class MLSourceReader<RowData> implements SourceReader<RowData, MLSourceSp
 	}
 
 	@Override
-	public void addSplits(List<MLSourceSplit> splits) {
+	public void addSplits(List<MockMLSourceSplit> splits) {
 
 	}
 
 	@Override
 	public void handleSourceEvents(SourceEvent sourceEvent) {
-		if(sourceEvent instanceof MLSourceEvent) {
-			this.finished = ((MLSourceEvent) sourceEvent).getDone();
+		if(sourceEvent instanceof MockMLSourceEvent) {
+			this.finished = ((MockMLSourceEvent) sourceEvent).getDone();
 			LOG.info("receive event from SplitEnumerator and change finish status to: {}", this.finished);
 			//System.out.println("receive event from SplitEnumerator and change finish status to:  " + this.finished);
 		}

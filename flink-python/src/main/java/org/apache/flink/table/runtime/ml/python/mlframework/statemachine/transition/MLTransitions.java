@@ -19,7 +19,7 @@ public class MLTransitions {
 
 		@Override
 		public void transition(AbstractMLStateMachine amStateMachine, MLEvent mlEvent) {
-			System.out.println("unknown to init");
+
 		}
 	}
 
@@ -32,8 +32,8 @@ public class MLTransitions {
 
 		@Override
 		public void transition(AbstractMLStateMachine AbstractMLStateMachine, MLEvent mlEvent)
-			throws InvalidStateTransitionException, TaskNotRunningException {
-			String clusterInfo = mlMeta.getClusterInfo();
+			throws TaskNotRunningException {
+			String clusterInfo = mlEvent.getMessage().toString();
 			for (int i = 0; i < contextList.size(); ++i) {
 				OperatorCoordinator.Context context = contextList.get(i);
 				for (int j = 0; j < context.currentParallelism(); j++) {
@@ -41,12 +41,12 @@ public class MLTransitions {
 				}
 			}
 			mlMeta.setWorkStart(true);
-			try {
-				Thread.sleep(30000);
-				mlMeta.workStopEventQueue.put(new WorkStopEvent(true));
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+//			try {
+//				Thread.sleep(30000);
+//				mlMeta.workStopEventQueue.put(new WorkStopEvent(true));
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
 		}
 	}
 
@@ -59,7 +59,7 @@ public class MLTransitions {
 
 		@Override
 		public void transition(AbstractMLStateMachine amStateMachine, MLEvent mlEvent) {
-			System.out.println("finish");
+			//System.out.println("finish");
 		}
 	}
 }

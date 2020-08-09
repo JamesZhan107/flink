@@ -4,6 +4,8 @@ import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.A
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.MLEventType;
 import org.apache.flink.runtime.operators.coordination.OperatorCoordinator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.*;
@@ -19,6 +21,8 @@ public abstract class AbstractMLStateMachine {
 	protected final ExecutorService exService;
 	protected final MLMeta mlMeta;
 	protected final List<OperatorCoordinator.Context> contextList;
+
+	protected static final Logger LOG = LoggerFactory.getLogger(AbstractMLStateMachine.class);
 
 	protected AbstractMLStateMachine(MLMeta mlMeta, List<OperatorCoordinator.Context> contextList) {
 		ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
@@ -76,6 +80,7 @@ public abstract class AbstractMLStateMachine {
 				}
 				throw e;
 			}
+			LOG.info("doTransition:" + oldState.toString() + " => " + getInternalState().toString());
 			System.out.println("doTransition:" + oldState.toString() + " => " + getInternalState().toString());
 
 		} finally {

@@ -4,26 +4,33 @@ import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.MLMeta;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
 import static org.apache.flink.table.runtime.ml.python.mlframework.statemachine.MLMeta.getMlMeta;
 
 
-public class MLSplitEnumerator implements SplitEnumerator<MLSourceSplit, Set<MLSourceSplit>> {
-	private static final MLSplitEnumerator mlSplitEnumerator = new MLSplitEnumerator();
-	private SplitEnumeratorContext<MLSourceSplit> enumContext;
+public class MockMLSplitEnumerator implements SplitEnumerator<MockMLSourceSplit, Set<MockMLSourceSplit>> {
+	private static final MockMLSplitEnumerator mlSplitEnumerator = new MockMLSplitEnumerator();
+	private SplitEnumeratorContext<MockMLSourceSplit> enumContext;
 	private boolean started;
 	private boolean closed;
 	private MLMeta mlMeta;
 
-	private MLSplitEnumerator() {
+	protected static final Logger LOG = LoggerFactory.getLogger(MockMLSplitEnumerator.class);
+
+	private MockMLSplitEnumerator() {
+		//LOG.info("Construct Enumerator");
+		System.out.println("Construct Enumerator");
 		this.started = false;
 		this.closed = false;
 	}
 
-	public static MLSplitEnumerator getMlSplitEnumerator(SplitEnumeratorContext<MLSourceSplit> enumContext){
+	public static MockMLSplitEnumerator getMlSplitEnumerator(SplitEnumeratorContext<MockMLSourceSplit> enumContext){
 		mlSplitEnumerator.enumContext = enumContext;
 		mlSplitEnumerator.mlMeta = getMlMeta();
 		return mlSplitEnumerator;
@@ -32,7 +39,7 @@ public class MLSplitEnumerator implements SplitEnumerator<MLSourceSplit, Set<MLS
 	@Override
 	public void start() {
 		this.started = true;
-		Thread task = new Thread(new MLSourceTask(enumContext, mlMeta));
+		Thread task = new Thread(new MockMLSourceTask(enumContext, mlMeta));
 		task.start();
 	}
 
@@ -42,7 +49,7 @@ public class MLSplitEnumerator implements SplitEnumerator<MLSourceSplit, Set<MLS
 	}
 
 	@Override
-	public void addSplitsBack(List<MLSourceSplit> splits, int subtaskId) {
+	public void addSplitsBack(List<MockMLSourceSplit> splits, int subtaskId) {
 
 	}
 
@@ -52,7 +59,7 @@ public class MLSplitEnumerator implements SplitEnumerator<MLSourceSplit, Set<MLS
 	}
 
 	@Override
-	public Set<MLSourceSplit> snapshotState() throws Exception {
+	public Set<MockMLSourceSplit> snapshotState() throws Exception {
 		return null;
 	}
 

@@ -169,7 +169,7 @@ class PyFlinkBlinkStreamTableTestCase(PyFlinkTestCase):
         self.t_env.get_config().get_configuration().set_string(
             "taskmanager.memory.task.off-heap.size", "80mb")
         self.t_env.get_config().get_configuration().set_string(
-            "config.role", '{"worker":"3", "ps":"2"}')
+            "config.role", '{"worker":"2", "ps":"1"}')
 
 
 class PyFlinkBlinkBatchTableTestCase(PyFlinkTestCase):

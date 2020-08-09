@@ -2,12 +2,12 @@ package org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event;
 
 public class MLEvent extends AbstractEvent<MLEventType> {
 	private Object message;
-	private long version;
+	private String name;
 
-	public MLEvent(MLEventType mlEventType, Object message, long version) {
+	public MLEvent(MLEventType mlEventType, Object message, String name) {
 		super(mlEventType);
 		this.message = message;
-		this.version = version;
+		this.name = name;
 	}
 
 	public Object getMessage() {
@@ -18,11 +18,11 @@ public class MLEvent extends AbstractEvent<MLEventType> {
 		this.message = message;
 	}
 
-	public long getVersion() {
-		return version;
+	public String getName() {
+		return name;
 	}
 
-	public void setVersion(long version) {
-		this.version = version;
+	public void setName(String name) {
+		this.name = name;
 	}
 }

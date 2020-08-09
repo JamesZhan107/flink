@@ -7,9 +7,11 @@ import static org.apache.flink.table.runtime.ml.python.mlframework.coordinator.M
 
 public class MLCoordinatorProvider implements OperatorCoordinator.Provider {
 	private final OperatorID operatorId;
+	private final String operatorName;
 
-	public MLCoordinatorProvider(OperatorID operatorId) {
+	public MLCoordinatorProvider(OperatorID operatorId, String operatorName) {
 		this.operatorId = operatorId;
+		this.operatorName = operatorName;
 	}
 
 	@Override
@@ -19,6 +21,6 @@ public class MLCoordinatorProvider implements OperatorCoordinator.Provider {
 
 	@Override
 	public OperatorCoordinator create(OperatorCoordinator.Context context) {
-		return getCoordinator(context);
+		return getCoordinator(context, operatorName);
 	}
 }

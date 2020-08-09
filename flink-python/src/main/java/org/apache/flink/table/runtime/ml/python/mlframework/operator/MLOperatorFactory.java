@@ -16,7 +16,7 @@ public class MLOperatorFactory implements OneInputStreamOperatorFactory<Integer,
 
 	@Override
 	public OperatorCoordinator.Provider getCoordinatorProvider(String operatorName, OperatorID operatorID) {
-		return new MLCoordinatorProvider(operatorID);
+		return new MLCoordinatorProvider(operatorID, operatorName);
 	}
 
 	@Override
