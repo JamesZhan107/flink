@@ -22,19 +22,20 @@ import org.apache.flink.table.planner.codegen.ProjectionCodeGenerator;
 import org.apache.flink.table.runtime.generated.GeneratedProjection;
 import org.apache.flink.table.runtime.generated.Projection;
 import org.apache.flink.table.runtime.ml.python.mlframework.event.NodeFinishEvent;
+import org.apache.flink.streaming.runtime.tasks.OperatorBeforeOpen;
 import org.apache.flink.table.runtime.ml.python.mlframework.util.IpHostUtil;
 import org.apache.flink.table.runtime.typeutils.PythonTypeUtils;
 import org.apache.flink.table.runtime.typeutils.RowDataSerializer;
 import org.apache.flink.table.types.logical.RowType;
 
-import java.io.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * The Python {@link TableFunction} ML operator for the blink planner.
  */
 @Internal
 public class RowDataPythonTableFunctionMLOperator
-	extends AbstractPythonTableFunctionOperator<RowData, RowData, RowData> implements OperatorEventHandler {
+	extends AbstractPythonTableFunctionOperator<RowData, RowData, RowData> implements OperatorEventHandler, OperatorBeforeOpen {
 
 
 	private static final long serialVersionUID = 1L;
@@ -73,6 +74,8 @@ public class RowDataPythonTableFunctionMLOperator
 	private String address;
 	private final String name;
 	private int index;
+	private String clusterInfo;
+	private CompletableFuture<Void> future;
 
 	public RowDataPythonTableFunctionMLOperator(
 		Configuration config,
@@ -86,14 +89,19 @@ public class RowDataPythonTableFunctionMLOperator
 		this.name = name;
 	}
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public void open() throws Exception {
+	public CompletableFuture<Void> beforeOpen() {
+		future = new CompletableFuture<>();
 		address = IpHostUtil.getAddress();
 		OperatorEvent operatorRegisterEvent = new OperatorRegisterEvent(name, address);
 		eventGateway.sendEventToCoordinator(operatorRegisterEvent);
-		super.open();
+		return future;
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public void open() throws Exception {
 		index = getRuntimeContext().getIndexOfThisSubtask();
+		super.open();
 		rowDataWrapper = new StreamRecordRowDataWrappingCollector(output);
 		reuseJoinedRow = new JoinedRowData();
 
@@ -177,24 +185,39 @@ public class RowDataPythonTableFunctionMLOperator
 	@Override
 	public void handleOperatorEvent(OperatorEvent evt) {
 		if(evt instanceof ClusterInfoEvent) {
-			String clusterInfo = ((ClusterInfoEvent) evt).getCluster();
+			clusterInfo = ((ClusterInfoEvent) evt).getCluster();
 			LOG.info("operator receive the cluster info : {}", name + "  "+ index + " " + address + "   get :" + clusterInfo);
-			String path = pythonEnvironmentManager.getBaseDirectory();
-			String clusterInfoFile = path + "/clusterInfo.txt";
+			future.complete(null);
+			buildMLConfig();
 			try {
-				//create file
-				File file = new File(clusterInfoFile);
-				file.createNewFile();
-				//write data
-				OutputStreamWriter write = new OutputStreamWriter(new FileOutputStream(file),"gbk");
-				BufferedWriter writer=new BufferedWriter(write);
-				writer.write(clusterInfo + "&");
-				writer.write(name);
-				writer.write("&" + index);
-				writer.close();
-			} catch (IOException e) {
+				pythonFunctionRunner = createPythonFunctionRunner();
+				pythonFunctionRunner.open(config);
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
+
+//			String path = pythonEnvironmentManager.getBaseDirectory();
+//			String clusterInfoFile = path + "/clusterInfo.txt";
+//			try {
+//				//create file
+//				File file = new File(clusterInfoFile);
+//				file.createNewFile();
+//				//write data
+//				OutputStreamWriter write = new OutputStreamWriter(new FileOutputStream(file),"gbk");
+//				BufferedWriter writer=new BufferedWriter(write);
+//				writer.write(clusterInfo + "&");
+//				writer.write(name);
+//				writer.write("&" + index);
+//				writer.close();
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
 		}
+	}
+
+	private void buildMLConfig() {
+		jobOptions.put("table.exec.cluster_info", clusterInfo);
+		jobOptions.put("table.exec.job_name", name);
+		jobOptions.put("table.exec.index", String.valueOf(index));
 	}
 }

@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.apache.flink.streaming.runtime.tasks.mailbox.TaskMailbox.MIN_PRIORITY;
 
@@ -84,6 +85,16 @@ public class MailboxProcessor implements Closeable {
 	private final StreamTaskActionExecutor actionExecutor;
 
 	private Meter idleTime = new MeterView(new SimpleCounter());
+
+	private List<CompletableFuture<Void>> futureList;
+
+	public List<CompletableFuture<Void>> getFutureList() {
+		return futureList;
+	}
+
+	public void setFutureList(List<CompletableFuture<Void>> futureList) {
+		this.futureList = futureList;
+	}
 
 	public MailboxProcessor(MailboxDefaultAction mailboxDefaultAction) {
 		this(mailboxDefaultAction, StreamTaskActionExecutor.IMMEDIATE);
@@ -188,10 +199,22 @@ public class MailboxProcessor implements Closeable {
 
 	private boolean runMailboxStep(TaskMailbox localMailbox, MailboxController defaultActionContext) throws Exception {
 		if (processMail(localMailbox)) {
-			mailboxDefaultAction.runDefaultAction(defaultActionContext); // lock is acquired inside default action as needed
+			if (!isDone(futureList)) {
+				Thread.sleep(100);
+			}else {
+				mailboxDefaultAction.runDefaultAction(defaultActionContext); // lock is acquired inside default action as needed
+			}
 			return true;
 		}
 		return false;
+	}
+
+	private boolean isDone(List<CompletableFuture<Void>> future){
+		boolean flag = true;
+		for(CompletableFuture<Void> f : future){
+			flag = f.isDone() && flag;
+		}
+		return flag;
 	}
 
 	/**

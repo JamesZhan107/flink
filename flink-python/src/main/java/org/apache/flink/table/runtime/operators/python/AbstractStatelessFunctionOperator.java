@@ -77,7 +77,7 @@ public abstract class AbstractStatelessFunctionOperator<IN, OUT, UDFIN>
 	/**
 	 * The options used to configure the Python worker process.
 	 */
-	private final Map<String, String> jobOptions;
+	protected final Map<String, String> jobOptions;
 
 	/**
 	 * The user-defined function input logical type.

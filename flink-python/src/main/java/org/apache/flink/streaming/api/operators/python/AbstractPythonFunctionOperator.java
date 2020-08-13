@@ -95,7 +95,7 @@ public abstract class AbstractPythonFunctionOperator<IN, OUT>
 	/**
 	 * The python config.
 	 */
-	private final PythonConfig config;
+	protected final PythonConfig config;
 
 	protected transient PythonEnvironmentManager pythonEnvironmentManager;
 
@@ -134,8 +134,8 @@ public abstract class AbstractPythonFunctionOperator<IN, OUT>
 				LOG.info("The maximum bundle time is configured to {} milliseconds.", this.maxBundleTimeMills);
 			}
 
-			this.pythonFunctionRunner = createPythonFunctionRunner();
-			this.pythonFunctionRunner.open(config);
+//			this.pythonFunctionRunner = createPythonFunctionRunner();
+//			this.pythonFunctionRunner.open(config);
 
 			this.elementCount = 0;
 			this.lastFinishBundleTime = getProcessingTimeService().getCurrentProcessingTime();

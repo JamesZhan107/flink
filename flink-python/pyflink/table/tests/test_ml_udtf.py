@@ -124,53 +124,57 @@ class TFClusterTest(object):
 # test function
 @udtf(input_types=[DataTypes.BIGINT(), DataTypes.BIGINT()], result_types=DataTypes.BIGINT(), udtf_type="ml")
 def test_tf_cluster_worker(x):
-    flag = True
-    while flag:
-        if os.path.exists(os.environ['BOOT_LOG_DIR'] + '/clusterInfo.txt'):
-            import tensorflow as tf
-            import time
-            import json
+    # flag = True
+    # while flag:
+    # if os.path.exists(os.environ['BOOT_LOG_DIR'] + '/clusterInfo.txt'):
+    import tensorflow as tf
+    import time
+    import json
 
-            f = open(os.environ['BOOT_LOG_DIR'] + '/clusterInfo.txt')
-            line = f.readline()
-            if line is not None:
-                info = line.split("&")
-                cluster_json = json.loads(info[0])
-                job_name = info[1]
-                index = int(info[2])
+    # f = open(os.environ['BOOT_LOG_DIR'] + '/clusterInfo.txt')
+    # line = f.readline()
+    # if line is not None:
+    #     info = line.split("&")
+    #     cluster_json = json.loads(info[0])
+    #     job_name = info[1]
+    #     index = int(info[2])
 
-            logging.info(info[1] + "--" + info[2] + "worker start!!!!!!!!!!!!!!!!!!!!!!!")
+    cluster_json = json.loads(os.environ['table.exec.cluster_info'])
+    job_name = os.environ['table.exec.job_name']
+    index = int(os.environ['table.exec.index'])
 
-            def build_graph():
-                global a
-                i = 1
-                a = tf.placeholder(tf.float32, shape=None, name="a")
-                b = tf.reduce_mean(a, name="b")
-                r_list = []
-                v = tf.Variable(dtype=tf.float32, initial_value=tf.constant(1.0), name="v_" + str(i))
-                c = tf.add(b, v, name="c_" + str(i))
-                add = tf.assign(v, c, name="assign_" + str(i))
-                r_list.append(add)
-                global_step = tf.contrib.framework.get_or_create_global_step()
-                global_step_inc = tf.assign_add(global_step, 1)
-                r_list.append(global_step_inc)
-                return r_list
+    logging.info(job_name + "--" + str(index) + "worker start!!!!!!!!!!!!!!!!!!!!!!!")
 
-            cluster = tf.train.ClusterSpec(cluster=cluster_json)
-            server = tf.train.Server(cluster, job_name=job_name, task_index=index)
-            sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False,
-                                         device_filters=["/job:ps", "/job:worker/task:%d" % index])
-            t = time.time()
-            with tf.device(
-                tf.train.replica_device_setter(worker_device='/job:worker/task:' + str(index), cluster=cluster)):
-                r_list = build_graph()
-                hooks = [tf.train.StopAtStepHook(last_step=2)]
-            with tf.train.MonitoredTrainingSession(master=server.target, config=sess_config,
-                                                   checkpoint_dir="/var/tmp/" + str(t),
-                                                   hooks=hooks) as mon_sess:
-                while not mon_sess.should_stop():
-                    logging.info(mon_sess.run(r_list, feed_dict={a: [1.0, 2.0, 3.0]}))
-            flag = False
+    def build_graph():
+        global a
+        i = 1
+        a = tf.placeholder(tf.float32, shape=None, name="a")
+        b = tf.reduce_mean(a, name="b")
+        r_list = []
+        v = tf.Variable(dtype=tf.float32, initial_value=tf.constant(1.0), name="v_" + str(i))
+        c = tf.add(b, v, name="c_" + str(i))
+        add = tf.assign(v, c, name="assign_" + str(i))
+        r_list.append(add)
+        global_step = tf.contrib.framework.get_or_create_global_step()
+        global_step_inc = tf.assign_add(global_step, 1)
+        r_list.append(global_step_inc)
+        return r_list
+
+    cluster = tf.train.ClusterSpec(cluster=cluster_json)
+    server = tf.train.Server(cluster, job_name=job_name, task_index=index)
+    sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False,
+                                 device_filters=["/job:ps", "/job:worker/task:%d" % index])
+    t = time.time()
+    with tf.device(
+        tf.train.replica_device_setter(worker_device='/job:worker/task:' + str(index), cluster=cluster)):
+        r_list = build_graph()
+        hooks = [tf.train.StopAtStepHook(last_step=2)]
+    with tf.train.MonitoredTrainingSession(master=server.target, config=sess_config,
+                                           checkpoint_dir="/var/tmp/" + str(t),
+                                           hooks=hooks) as mon_sess:
+        while not mon_sess.should_stop():
+            logging.info(mon_sess.run(r_list, feed_dict={a: [1.0, 2.0, 3.0]}))
+            # flag = False
     return range(1, 2)
 
 
@@ -180,22 +184,26 @@ class tf_udtf(TableFunction):
         pass
 
     def ps_func(self):
-            f = open(os.environ['BOOT_LOG_DIR'] + '/clusterInfo.txt')
-            line = f.readline()
-            import json
-            if line is not None:
-                info = line.split("&")
-                cluster_json = json.loads(info[0])
-                job_name = info[1]
-                index = int(info[2])
+        # f = open(os.environ['BOOT_LOG_DIR'] + '/clusterInfo.txt')
+        # line = f.readline()
+        # import json
+        # if line is not None:
+        #     info = line.split("&")
+        #     cluster_json = json.loads(info[0])
+        #     job_name = info[1]
+        #     index = int(info[2])
+        import json
+        cluster_json = json.loads(os.environ['table.exec.cluster_info'])
+        job_name = os.environ['table.exec.job_name']
+        index = int(os.environ['table.exec.index'])
 
-            import tensorflow as tf
-            cluster = tf.train.ClusterSpec(cluster=cluster_json)
-            server = tf.train.Server(cluster, job_name=job_name, task_index=index)
-            server.join()
+        import tensorflow as tf
+        cluster = tf.train.ClusterSpec(cluster=cluster_json)
+        server = tf.train.Server(cluster, job_name=job_name, task_index=index)
+        server.join()
 
     def eval(self, x):
-        if self.flag & os.path.exists(os.environ['BOOT_LOG_DIR'] + '/clusterInfo.txt'):
+        if self.flag:
             logging.info("start son process!!!!!!!!!!")
             import multiprocessing
             p = multiprocessing.Process(target=self.ps_func)

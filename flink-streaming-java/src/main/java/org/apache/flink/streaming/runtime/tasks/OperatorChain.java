@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.apache.flink.util.Preconditions.checkState;
@@ -111,6 +112,16 @@ public class OperatorChain<OUT, OP extends StreamOperator<OUT>> implements Strea
 	 * this value is {@link StreamStatus#IDLE}.
 	 */
 	private StreamStatus streamStatus = StreamStatus.ACTIVE;
+
+	private List<CompletableFuture<Void>> futureList;
+
+	public List<CompletableFuture<Void>> getFutureList() {
+		return futureList;
+	}
+
+	public void setFutureList(List<CompletableFuture<Void>> futureList) {
+		this.futureList = futureList;
+	}
 
 	public OperatorChain(
 			StreamTask<OUT, OP> containingTask,
@@ -288,6 +299,10 @@ public class OperatorChain<OUT, OP extends StreamOperator<OUT>> implements Strea
 		for (StreamOperatorWrapper<?, ?> operatorWrapper : getAllOperators(true)) {
 			StreamOperator<?> operator = operatorWrapper.getStreamOperator();
 			operator.initializeState(streamTaskStateInitializer);
+			if (operator instanceof OperatorBeforeOpen) {
+				CompletableFuture<Void> f = ((OperatorBeforeOpen) operator).beforeOpen();
+				futureList.add(f);
+			}
 			operator.open();
 		}
 	}

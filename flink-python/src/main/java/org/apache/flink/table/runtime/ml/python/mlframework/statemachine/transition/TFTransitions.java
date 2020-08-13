@@ -1,7 +1,6 @@
 package org.apache.flink.table.runtime.ml.python.mlframework.statemachine.transition;
 
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.AbstractMLStateMachine;
-import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.InvalidStateTransitionException;
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.MLEvent;
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.MLEventType;
 import org.apache.flink.table.runtime.ml.python.mlframework.statemachine.event.WorkStopEvent;
@@ -51,6 +50,7 @@ public class TFTransitions {
 			int lastNodeNum = mlMeta.getLastNodeNum();
 			lastNodeNum--;
 			mlMeta.setLastNodeNum(lastNodeNum);
+			//if(lastNodeNum == 2){
 			if(lastNodeNum == mlMeta.nodeNumMap.getOrDefault("ps", 0)){
 				try {
 					mlMeta.workStopEventQueue.put(new WorkStopEvent(true));
