@@ -1,7 +1,5 @@
-# 抽象创建工作流方法，通过传入json配置字符串，遍历构造工作流
-import json
-
 from pyflink.table import DataTypes
+from pyflink.table.udf import udtf
 from pyflink.testing import source_sink_utils
 
 
@@ -14,16 +12,18 @@ class TFUtils():
         t_env.register_table_sink("Results", table_sink)
 
         for name, num in vars(config).items():
-            print(name)
-            print(num)
-            self.add_role(t_env, func, name, num)
+            self.add_role(t_env, func, name)
 
-    def add_role(self, t_env, func, name, num):
+    def add_role(self, t_env, func, name):
 
         if name == "worker":
-            t_env.register_function(name, func)
+            t_env.register_function(name, udtf(func(), input_types=DataTypes.BIGINT(),
+                                    result_types=DataTypes.BIGINT(), udtf_type="ml"))
 
-            t1 = t_env.from_elements([[3], [2]], ['a'])
+            # batch mode
+            # t1 = t_env.from_elements([[3.0], [3.0]], ['a'])
+            # stream mode
+            t1 = t_env.from_elements([[3.0], [3.0], [4.0], [4.0], [5.0], [5.0]], ['a'])
 
             t1 = t1.join_lateral("worker(a) as x") \
                 .select("x")
@@ -31,7 +31,8 @@ class TFUtils():
             t1.insert_into("Results")
 
         else:
-            t_env.register_function(name, func)
+            t_env.register_function(name, udtf(func(), input_types=DataTypes.BIGINT(),
+                                    result_types=DataTypes.BIGINT(), udtf_type="ml"))
 
             my_source_ddl = """
                         create table mySource (

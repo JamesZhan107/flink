@@ -80,19 +80,24 @@ class TFStandaloneTests(TFStandaloneTest, PyFlinkBlinkStreamTableTestCase):
 
 class TFClusterTest(object):
     def test_tf_cluster(self):
-        self.t_env.register_function("worker", test_tf_cluster_worker)
+        self.t_env.register_function("worker", udtf(tf_sample(), input_types=DataTypes.BIGINT(),
+                                                    result_types=DataTypes.BIGINT(), udtf_type="ml"))
 
-        t1 = self.t_env.from_elements([[3], [2]], ['a'])
+        t1 = self.t_env.from_elements([[1], [1]], ['a'])
+        # self.t_env.register_function("worker", test_tf_cluster_worker)
+        #
+        # t1 = self.t_env.from_elements([[3], [2]], ['a'])
 
         t1 = t1.join_lateral("worker(a) as x") \
             .select("x")
-
-        # register ps function by @, can not stop it
-        # self.t_env.register_function("ps", test_tf_cluster_ps)
-
-        # register ps function by class, can stop it
-        self.t_env.register_function("ps", udtf(tf_udtf(), input_types=DataTypes.BIGINT(),
+        '''
+        register ps function by @, can not stop it,self.t_env.register_function("ps", test_tf_cluster_ps)
+        register ps function by class, can stop it
+        '''
+        self.t_env.register_function("ps", udtf(tf_sample(), input_types=DataTypes.BIGINT(),
                                                 result_types=DataTypes.BIGINT(), udtf_type="ml"))
+        # self.t_env.register_function("ps", udtf(tf_udtf(), input_types=DataTypes.BIGINT(),
+        #                                         result_types=DataTypes.BIGINT(), udtf_type="ml"))
 
         my_source_ddl2 = """
                             create table mySource2 (
@@ -119,6 +124,66 @@ class TFClusterTest(object):
         t2.insert_into("Results")
 
         self.t_env.execute("test")
+
+
+class tf_sample(TableFunction):
+    def open(self, function_context):
+        import json
+        import tensorflow as tf
+        self.flag = True
+        self.job_name = os.environ['table.exec.job_name']
+        self.index = int(os.environ['table.exec.index'])
+
+        cluster_json = json.loads(os.environ['table.exec.cluster_info'])
+        self.cluster = tf.train.ClusterSpec(cluster=cluster_json)
+        self.server = tf.train.Server(self.cluster, job_name=self.job_name, task_index=self.index)
+        pass
+
+    def ps_func(self):
+        self.server.join()
+
+    def worker_func(self, x):
+        import tensorflow as tf
+        import time
+        logging.info("start worker !!!!!!!!!!")
+        sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False,
+                                     device_filters=["/job:ps", "/job:worker/task:%d" % self.index])
+        with tf.device(
+            tf.train.replica_device_setter(worker_device='/job:worker/task:' + str(self.index), cluster=self.cluster)):
+            '''
+            b是增量，v是变量
+            c = b + v
+            v = c
+            addwb = v
+            '''
+            b = tf.Variable(dtype=tf.float32, initial_value=tf.constant(1.0))
+            v = tf.Variable(dtype=tf.float32, initial_value=tf.constant(2.0))
+            c = tf.add(b, v)
+            addwb = tf.assign(v, c)
+
+            global_step = tf.contrib.framework.get_or_create_global_step()
+            global_step_inc = tf.assign_add(global_step, 1)
+            hooks = [tf.train.StopAtStepHook(last_step=4)]
+            t = time.time()
+            with tf.train.MonitoredTrainingSession(master=self.server.target, config=sess_config,
+                                                   checkpoint_dir="/var/tmp/" + str(t),
+                                                   hooks=hooks) as mon_sess:
+                while not mon_sess.should_stop():
+                    result = mon_sess.run([addwb, global_step_inc])
+                    logging.info(str(result) + "  index: " + str(self.index))
+
+    def eval(self, x):
+        if self.job_name == "ps":
+            if self.flag:
+                logging.info("start son process!!!!!!!!!!")
+                import multiprocessing
+                p = multiprocessing.Process(target=self.ps_func)
+                p.start()
+                self.flag = False
+        else:
+            self.worker_func(x)
+
+        return range(1, 2)
 
 
 # test function
@@ -169,11 +234,14 @@ def test_tf_cluster_worker(x):
         tf.train.replica_device_setter(worker_device='/job:worker/task:' + str(index), cluster=cluster)):
         r_list = build_graph()
         hooks = [tf.train.StopAtStepHook(last_step=2)]
-    with tf.train.MonitoredTrainingSession(master=server.target, config=sess_config,
-                                           checkpoint_dir="/var/tmp/" + str(t),
-                                           hooks=hooks) as mon_sess:
-        while not mon_sess.should_stop():
-            logging.info(mon_sess.run(r_list, feed_dict={a: [1.0, 2.0, 3.0]}))
+        with tf.train.MonitoredTrainingSession(master=server.target, config=sess_config,
+                                               checkpoint_dir="/var/tmp/" + str(t),
+                                               hooks=hooks) as mon_sess:
+            while not mon_sess.should_stop():
+                result = mon_sess.run(r_list, feed_dict={a: [1.0, 2.0, 3.0]})
+                logging.info(str(result))
+                with open("/tmp/bbb" + str(index), "a") as f:
+                    f.write(str(result) + "\n")
             # flag = False
     return range(1, 2)
 
