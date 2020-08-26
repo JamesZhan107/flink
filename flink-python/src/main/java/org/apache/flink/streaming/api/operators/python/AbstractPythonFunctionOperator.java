@@ -97,11 +97,21 @@ public abstract class AbstractPythonFunctionOperator<IN, OUT>
 	 */
 	protected final PythonConfig config;
 
+	private transient boolean isMLOperator;
+
 	protected transient PythonEnvironmentManager pythonEnvironmentManager;
 
 	public AbstractPythonFunctionOperator(Configuration config) {
 		this.config = new PythonConfig(Preconditions.checkNotNull(config));
 		this.chainingStrategy = ChainingStrategy.ALWAYS;
+	}
+
+	public AbstractPythonFunctionOperator(
+		Configuration config,
+		boolean isMLOperator) {
+		this.config = new PythonConfig(Preconditions.checkNotNull(config));
+		this.chainingStrategy = ChainingStrategy.ALWAYS;
+		this.isMLOperator = isMLOperator;
 	}
 
 	public PythonConfig getPythonConfig() {
@@ -137,8 +147,10 @@ public abstract class AbstractPythonFunctionOperator<IN, OUT>
 			// create runner after receive the cluster information in RowDataPythonTableFunctionMLOperator#handleOperatorEvent
 			// But can only work in DL mode !!!
 			//TODO: find a way can work in all mode
-//			this.pythonFunctionRunner = createPythonFunctionRunner();
-//			this.pythonFunctionRunner.open(config);
+			if(!isMLOperator){
+				this.pythonFunctionRunner = createPythonFunctionRunner();
+				this.pythonFunctionRunner.open(config);
+			}
 
 			this.elementCount = 0;
 			this.lastFinishBundleTime = getProcessingTimeService().getCurrentProcessingTime();

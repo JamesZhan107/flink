@@ -73,6 +73,22 @@ public abstract class AbstractPythonTableFunctionOperator<IN, OUT, UDTFIN>
 		this.joinType = joinType;
 	}
 
+	public AbstractPythonTableFunctionOperator(
+		Configuration config,
+		PythonFunctionInfo tableFunction,
+		RowType inputType,
+		RowType outputType,
+		int[] udtfInputOffsets,
+		JoinRelType joinType,
+		boolean isMLOperator) {
+		super(config, inputType, outputType, udtfInputOffsets, isMLOperator);
+		this.tableFunction = Preconditions.checkNotNull(tableFunction);
+		Preconditions.checkArgument(
+			joinType == JoinRelType.INNER || joinType == JoinRelType.LEFT,
+			"The join type should be inner join or left join");
+		this.joinType = joinType;
+	}
+
 	@Override
 	public void open() throws Exception {
 		List<RowType.RowField> udtfOutputDataFields = new ArrayList<>(

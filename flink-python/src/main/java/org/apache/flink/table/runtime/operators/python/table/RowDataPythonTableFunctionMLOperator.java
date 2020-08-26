@@ -85,7 +85,7 @@ public class RowDataPythonTableFunctionMLOperator
 		int[] udtfInputOffsets,
 		JoinRelType joinType,
 	    String name) {
-		super(config, tableFunction, inputType, outputType, udtfInputOffsets, joinType);
+		super(config, tableFunction, inputType, outputType, udtfInputOffsets, joinType, true);
 		this.name = name;
 	}
 

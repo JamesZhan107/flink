@@ -126,6 +126,19 @@ public abstract class AbstractStatelessFunctionOperator<IN, OUT, UDFIN>
 		this.jobOptions = buildJobOptions(config);
 	}
 
+	public AbstractStatelessFunctionOperator(
+		Configuration config,
+		RowType inputType,
+		RowType outputType,
+		int[] userDefinedFunctionInputOffsets,
+		boolean isMLOperator) {
+		super(config, isMLOperator);
+		this.inputType = Preconditions.checkNotNull(inputType);
+		this.outputType = Preconditions.checkNotNull(outputType);
+		this.userDefinedFunctionInputOffsets = Preconditions.checkNotNull(userDefinedFunctionInputOffsets);
+		this.jobOptions = buildJobOptions(config);
+	}
+
 	@Override
 	public void open() throws Exception {
 		forwardedInputQueue = new LinkedList<>();
