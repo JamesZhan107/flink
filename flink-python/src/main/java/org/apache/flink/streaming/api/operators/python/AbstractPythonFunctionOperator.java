@@ -145,8 +145,6 @@ public abstract class AbstractPythonFunctionOperator<IN, OUT>
 			}
 
 			// create runner after receive the cluster information in RowDataPythonTableFunctionMLOperator#handleOperatorEvent
-			// But can only work in DL mode !!!
-			//TODO: find a way can work in all mode
 			if(!isMLOperator){
 				this.pythonFunctionRunner = createPythonFunctionRunner();
 				this.pythonFunctionRunner.open(config);
