@@ -1,10 +1,11 @@
+from pyflink.dl.job import DLUtils
 from pyflink.table import DataTypes
 from pyflink.table.udf import udtf
 from pyflink.testing import source_sink_utils
 
 
-class TFUtils():
-    def add_wokeflow(self, t_env, func, config):
+class TFUtils(DLUtils):
+    def add_workflow(self, t_env, func, config):
 
         table_sink = source_sink_utils.TestAppendSink(
             ['a'],
@@ -21,9 +22,9 @@ class TFUtils():
                                     result_types=DataTypes.BIGINT(), udtf_type="ml"))
 
             # batch mode
-            # t1 = t_env.from_elements([[3.0], [3.0]], ['a'])
+            t1 = t_env.from_elements([[3.0], [3.0]], ['a'])
             # stream mode
-            t1 = t_env.from_elements([[3.0], [3.0], [4.0], [4.0], [5.0], [5.0]], ['a'])
+            # t1 = t_env.from_elements([[3.0], [3.0], [4.0], [4.0], [5.0], [5.0]], ['a'])
 
             t1 = t1.join_lateral("worker(a) as x") \
                 .select("x")

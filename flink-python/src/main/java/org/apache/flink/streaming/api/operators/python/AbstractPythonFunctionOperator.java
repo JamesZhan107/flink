@@ -134,6 +134,9 @@ public abstract class AbstractPythonFunctionOperator<IN, OUT>
 				LOG.info("The maximum bundle time is configured to {} milliseconds.", this.maxBundleTimeMills);
 			}
 
+			// create runner after receive the cluster information in RowDataPythonTableFunctionMLOperator#handleOperatorEvent
+			// But can only work in DL mode !!!
+			//TODO: find a way can work in all mode
 //			this.pythonFunctionRunner = createPythonFunctionRunner();
 //			this.pythonFunctionRunner.open(config);
 

@@ -8,15 +8,15 @@ import os
 
 class TFOnFlinkTest(object):
     def test_tf_on_flink(self):
-        role = RoleConfig(2, 1)
+        role = TFRoleConfig(2, 1)
         role.worker = 2
         role.ps = 1
         tfUtil = TFUtils()
-        tfUtil.add_wokeflow(self.t_env, tf_stream_sample, role)
+        tfUtil.add_workflow(self.t_env, tf_batch_sample, role)
         self.t_env.execute("test")
 
 
-class RoleConfig:
+class TFRoleConfig:
     def __init__(self, worker, ps):
         self.worker = worker
         self.ps = ps

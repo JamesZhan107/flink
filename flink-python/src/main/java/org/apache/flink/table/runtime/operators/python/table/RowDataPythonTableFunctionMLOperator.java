@@ -195,23 +195,6 @@ public class RowDataPythonTableFunctionMLOperator
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-
-//			String path = pythonEnvironmentManager.getBaseDirectory();
-//			String clusterInfoFile = path + "/clusterInfo.txt";
-//			try {
-//				//create file
-//				File file = new File(clusterInfoFile);
-//				file.createNewFile();
-//				//write data
-//				OutputStreamWriter write = new OutputStreamWriter(new FileOutputStream(file),"gbk");
-//				BufferedWriter writer=new BufferedWriter(write);
-//				writer.write(clusterInfo + "&");
-//				writer.write(name);
-//				writer.write("&" + index);
-//				writer.close();
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}
 		}
 	}
 
